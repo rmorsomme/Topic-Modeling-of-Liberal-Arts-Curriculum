@@ -1,0 +1,533 @@
+---
+title : "Topic Modeling of Course Content"
+author: "Raphaël Morsomme"
+date  : "`r Sys.Date()`"
+output:
+  pdf_document:
+    number_section: TRUE
+    fig_height: 8.5
+---
+
+\newpage
+\tableofcontents
+\newpage
+
+```{r library, message = F}
+library(tidyverse)
+library(tidytext)
+
+library(ggwordcloud) # Word Clouds
+library(hunspell)    # Stemmer
+library(topicmodels) # LDA
+library(lemon)       # fine tune ggplot
+library(tm)          # Corpus()
+```
+
+# Introduction
+University departments often have little knowledge of the actual content of the programs they offer. Yet, having a good understanding of what each course of a program covers is paramount to maintain the quality of the program.
+
+In this script, I conduct a topic modeling exercise of the curriculum offered by the University College Maastricht (UCM), Maastricht University, the Netherlands. UCM offers a bachelor in Liberal Arts and Science. Its curriculum contains over two hundred courses on virtually every topic conceivable[^1], making it a great subject for a topic modeling exercise. The analysis is exploratory in nature: instead of answering a specific research question, I explore the data to obtain a better understanding of the content of UCM's curriculum.
+
+To accomplish this, I conduct three analyses. First, I use the tf-idf to identify the most distcinctive terms of each course and cluster of courses. Then, I compare the content of the 2014-2015 and 2018-2019 course catalogues to identify the themes that have emerged and declined these last few years. Finally, I use the Latent Dirichlet Allocation algorithm to create a topic model of the 2018-2019 curriculum, both at the course- and at the cluster-level. The data I use in the analyses are the course descriptions present in the course catalogues.
+
+# Data Preparation
+## Overview
+The data require some preparation before they can be analyzed. We starting by importing a dataset on the courses and the course catalogues (saved as pdf) from the directory. We then extract the descriptions of the courses from the course catalogues. These descriptions are one to two pages long and form the textual data that we will analyze. Lastly, we transform the data into the *[tidy text format](https://www.tidytextmining.com/tidytext.html)* and stem the terms.
+
+## Importing
+We import two datasets from the directory. `d_course` is a tiblle indicating the code, name and cluster[^2] of each course[^11]. `corpus` is a corpus containing the five most recent course catalogues of UCM. Course catalogues are published every year and contain a descritpion of each course of one or two pages.
+```{r import data, cache = TRUE}
+d_course  <- read_csv("Course.csv", col_type = cols())
+
+corpus <- Corpus(x             = DirSource("Catalogues"),
+                 readerControl = list(reader = readPDF(control = list(text = "-layout"))))
+```
+
+## Extracting Course Descriptions from Course Catalogues
+We extract the description of each course from the course catalogues. The code is a little longish and does not add much to the script, so the reader can skip this section.
+
+In the `Setup`, we create several objects that we use in the following two loops. We first loop (`Loop 1`) through each course catalogue present in `corpus`. In the loop, we first identify the section of the catalogue containing the course descriptions and assign it to `cat_description`. We then exclude from `cat_descriptions` the headers, appendix, etc, so that it only contains course descriptions. We take advantage of the fact that the the first line of a course description always starts with the code of the course, meaning that the first three characters of the first page of a description are one of the following `r c("COR", "HUM", "SCI", "SSC", "SKI", "PRO", "UGR", "CAP")`. Using `grep()`, we can therefore easily identify the first page of each description which we assign to `first_pages_description`.
+
+We then loop (`Loop 2`) through the first pages of the course descriptions. In the loop, we check if the description is one- or two-page long: if the following page is the first page of a description, then the description is only one page long; otherwise, the description is two page long and consists of the current and the following page[^7]. Once we have a course description, we use `substring(first = 1, last = 7)` to extract the code of the course (3 letters and 4 numbers) and save the description, with its code and the year of the catalogue in the tibble `d_description`.
+```{r description, cache = TRUE}
+# Setup
+n_catalogue    <- length(corpus)
+calendar_years <- c("2014-2015", "2015-2016", "2016-2017", "2017-2018", "2018-2019")
+d_description  <- tibble(Code            = character(0),
+                         `Calendar Year` = character(0),
+                         Description     = character(0))
+
+course_code <- c("COR", "HUM", "SCI", "SSC", "SKI", "PRO", "UGR", "CAP")
+course_code <- paste(course_code, collapse = "|")
+
+content_to_exclude <- c("^Core Courses \\(COR\\)",
+                        "^Humanities \\(HUM\\)",
+                        "^Sciences \\(SCI\\)",
+                        "^Social Sciences \\(SSC\\)",
+                        "^Skills Trainings \\(SKI\\)",
+                        "^Skills Training \\(SKI\\)",
+                        "^Project \\(PRO\\)",
+                        "^Projects \\(PRO\\)",
+                        "^Undergraduate Research \\(UGR\\)",
+                        " UCM Undergraduate\r\nResearch",
+                        "UCM Undergraduate\r\n  Research"
+                        )
+
+content_to_exclude <- paste(content_to_exclude, collapse = "|")
+
+# Loop 1
+for(n in 1 : n_catalogue){
+  
+  cat <- content(corpus[[n]])
+  
+  # Description Section
+  page_description_start <- grep(pattern = "^Core Courses \\(COR\\)", x = cat) + 1
+  page_description_end   <- grep(pattern = "Appendix"               , x = cat) - 1
+    if(length(page_description_end) == 0) page_description_end <- length(cat)
+  cat_description <- cat[page_description_start : page_description_end]
+  
+  # Course Descriptions Only
+  pages_to_exclude <- grep(pattern = content_to_exclude, x = cat_description)
+  cat_description  <- cat_description[!1:length(cat_description) %in% pages_to_exclude]
+  
+  # First Pages of Course Descriptions
+  first_three_letters     <- substr(cat_description, start = 1, stop = 3)
+  first_pages_description <- grep(pattern = course_code, x = first_three_letters)
+
+  # Loop 2
+  for(page in first_pages_description){
+    
+    # Extract Description
+    following_page <- page + 1 # for convenience
+    if(following_page %in% first_pages_description){
+      description <- cat_description[page]
+    }else{
+       description <- paste(cat_description[page : following_page], collapse = " ")
+    }
+    
+    # Save Description
+    Code <- substring(description, first = 1, last = 7)      
+    year <- calendar_years[n]
+    d_description <- d_description %>%
+      add_row(Code            = Code,
+              `Calendar Year` = year,
+              Description     = description)
+    
+  } # close for-loop 2 (page)
+} # close for-loop 1 (n)
+
+print(d_description)
+```
+
+## Tidying
+We save the course descriptions in the [tidy text format ](https://www.tidytextmining.com/tidytext.html) with one row per course-year-term.
+```{r tidy}
+d_description_tidy <- unnest_tokens(d_description, output = word, input = Description)
+print(d_description_tidy)
+```
+
+## Stemming
+Lastly, we stem the terms and filter out stop words. We use the stemmer from the `hunspell` package to build a stemming function `stem_hunspell()` which takes a term as input and returns its stem. We prefer the Hunspell stemmer over the usual Snowball stemmer because it offers a more precise stemming.
+
+> **Trick: dictionary-based approach to stem a large number of terms.**
+
+> Since it would take too much time to apply our stemming function to all `340.000` terms of `d_description_tidy`, we use a *dictionary-based approach*. We create a dictionnary that provides the stem of the `8,500` unique terms present in the dataset and then `jull_join` the newly created dictionary and `d_description_tidy` to stem all the terms at once. This way, we greatly reduce the number of times we use the stemming function.
+
+```{r function stem_hunspell, cache = TRUE}
+
+# Stemming function
+stem_hunspell <- function(term) {
+  # look up the term in the dictionary
+  stems <- hunspell_stem(term)[[1]]
+  
+  # identify the stem
+  if (length(stems) == 0) { # if no stem in dictionary, use  original term
+    stem <- term
+  } else { # if multiple stems, use last one (most basic)
+    stem <- stems[[length(stems)]]
+  }
+  
+  return(stem)
+}
+
+# Dictionary 
+my_dictionnary <- d_description_tidy %>%
+  distinct(word) %>%
+  mutate(word_stem = purrr::map_chr(.x = word,
+                                    .f = stem_hunspell))
+
+# Full join
+d_description_stem <- d_description_tidy %>%
+  full_join(my_dictionnary, by = "word") %>%
+  rename(word_original = word,
+         word          = word_stem) %>%
+  filter(!word %in% stop_words$word,
+         !word %in% as.character(1:1e3))
+print(d_description_stem) # See humanities (original) - humanity (stem)
+```
+
+# Analysis
+```{r function reorder_within & co., echo = FALSE}
+# Functions for ordering bars within facet in ggplot.
+# From: https://github.com/dgrtwo/drlib/blob/master/R/reorder_within.R
+reorder_within <- function(x, by, within, fun = mean, sep = "___", ...) {
+  new_x <- paste(x, within, sep = sep)
+  stats::reorder(new_x, by, FUN = fun)
+}
+
+scale_x_reordered <- function(..., sep = "___") {
+  reg <- paste0(sep, ".+$")
+  ggplot2::scale_x_discrete(labels = function(x) gsub(reg, "", x), ...)
+}
+
+scale_y_reordered <- function(..., sep = "___") {
+  reg <- paste0(sep, ".+$")
+  ggplot2::scale_y_discrete(labels = function(x) gsub(reg, "", x), ...)
+}
+```
+
+## Overview
+Now that the textual data is stored in a tidy text format and is stemmed, we can model the content of the curriculum. We conduct three analyses. First, we identify the most important terms of each course and cluster with the tf-idf. Next, we identify terms that have emerged and declined in the curriculum. Finally, we use the LDA algorithm (a popular technique for topic modeling) to build a topic model of the 2018-2019 curriculum, both at the course- and cluster-level.
+
+## TF-IDF
+The tf-idf is a popular measure to identify the most important terms of each document belonging to a corpus. By penalizing terms that occur in many documents, it allows us to focus on the terms that are specific to each document. Terms which appear in a large number of course descriptions such as "learn" or "student" tell us little about the content of the course and therefore have a low tf-idf. This way, we can identify the most *distinctive* terms of each course/cluster and get a feel of the topics that they cover.
+
+We use the function `bind_tf_idf()` to obtain the tf-idf of each term for the year 2018-2019. We then identify the most distinctive terms of each cluster and course[^9] and display them both as barplots and word clouds. In the latter, the size and the color of a term indicates its tf-idf.
+
+```{r tdm}
+tdm_course <- d_description_stem %>%
+  filter(`Calendar Year` == "2018-2019") %>%
+  count(Code, word, sort = T) %>%
+  bind_tf_idf(term = word, document = Code, n = n) %>%
+  left_join(d_course, by = "Code")
+
+print(tdm_course)
+
+tdm_cluster <- d_description_stem %>%
+  filter(`Calendar Year` == "2018-2019") %>%
+  left_join(d_course, by = "Code") %>%
+  count(Cluster, word, sort = T) %>%
+  bind_tf_idf(term = word, document = Cluster, n = n)
+
+print(tdm_cluster)
+```
+
+### Results
+The tf-idf does a pretty good job at isolating the most important terms of the courses/clusters. If the names of the courses/clusters were absent from the plots, it would be fairly easy to guess them from the terms. We also observe interesting elements concerning the content of the clusters. For instance, while the cluster `History` gives a central place to the European continent (with terms like Europe, european), the cluster `International Relations` focuses more on China (chinese).
+
+```{r twelve courses, echo = FALSE}
+# 3 humanities courses (HUM), 3 science courses (SCI), 3 social science courses (SSC), 3 skills/project/capstone (SKI/PRO/CAP)
+twelve_course <- c("Enlightenment and Romanticism", "Philosophy of Language", "Shakespeare on Screen", # HUM
+                   "Introduction to Biology", "Computer Science", "Optimization", # SCI
+                   "War in World Politics", "Psychology and the Law", "International Law", # SSC
+                   "Capstone", "Research Project", "Lab Skills: Biochemistry" # CAP, PRO, SKI
+                   )
+```
+
+```{r tdm visualization course, echo = FALSE, message = FALSE, warning = FALSE}
+# Folder to save plots
+path <- "Plots/1 tf-idf"
+
+# Data preparation for plotting
+tdm_top <- tdm_course %>%
+  filter(`Course Title` %in% twelve_course, 
+         n >= 2) %>%
+  group_by(Code) %>%
+  top_n(9, tf_idf) %>%
+  mutate(tf_idf_norm = tf_idf / sum(tf_idf), # normalization for better results in wordcloud
+         angle = 10 * sample(-2:2, n(), replace = TRUE, prob = c(1,1,4,1,1))) %>%
+  ungroup
+  
+# Barplot
+tdm_top %>%
+  ggplot(aes(reorder_within(word, tf_idf, Code), tf_idf)) +
+  geom_col(show.legend = FALSE) +
+  labs(title = "Distinctive Terms of Courses", x = NULL, y = "tf-idf") +
+  scale_x_reordered() +
+  facet_wrap(~ Title_short, scales = "free", ncol = 3) +
+  coord_flip() +
+  theme_light() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("course_barplot.jpeg", path = path)
+
+# Word Clouds
+tdm_top %>%
+  ggplot(aes(size = order(tf_idf_norm^0.7, tf_idf_norm), label = word,
+             angle = angle, color = tf_idf_norm^0.7)) +
+  geom_text_wordcloud_area(area_corr_power = 1,
+                           eccentricity    = 1,
+                           rm_outside      = T) +
+  scale_radius(range = c(3, 7), limits = c(0, NA)) +
+  scale_color_gradient(low = "red", high = "blue") +
+  facet_wrap(~ `Course Title`, ncol = 3) +
+  labs(title = "Distinctive Terms of Courses") +
+  theme(panel.background = element_rect(fill = "white"),
+        plot.title = element_text(hjust = 0.5))
+
+ggsave("course_wordcloud.jpeg", path = path)
+```
+
+```{r tf-idf visual cluster, echo = FALSE, message = FALSE, warning = FALSE}
+# Data preparation for plotting
+tdm_top <- tdm_cluster %>%
+  filter(n >= 5,
+         !is.na(Cluster)) %>%
+  group_by(Cluster) %>%
+  top_n(9, tf_idf) %>%
+  mutate(tf_idf_norm = tf_idf / sum(tf_idf), 
+         angle = 10 * sample(-2:2, n(), replace = T, prob = c(1,1,4,1,1))) %>%
+  ungroup
+
+# Barplot
+tdm_top %>%
+  ggplot(aes(reorder_within(word, tf_idf, Cluster), tf_idf)) +
+  geom_col(show.legend = FALSE) +
+  labs(title = "Distinctive Terms of Clusters", x = NULL, y = "tf-idf") +
+  scale_x_reordered() +
+  facet_wrap(~ Cluster, scales = "free", ncol = 3) +
+  coord_flip() +
+  theme_light() +
+  theme(strip.text.x = element_text(),
+        plot.title = element_text(hjust = 0.5))
+
+ggsave("cluster_barplot.jpeg", path = path)
+
+# Word Clouds
+tdm_top %>%
+  ggplot(aes(size = order(tf_idf_norm^0.7, tf_idf_norm), label = word, angle = angle, color = tf_idf_norm^0.7)) +
+  geom_text_wordcloud_area(area_corr_power = 1,
+                           eccentricity    = 1,
+                           rm_outside      = T) +
+  scale_radius(range = c(3, 6), limits = c(0, NA)) +
+  scale_color_gradient(low = "red", high = "blue") +
+  facet_wrap(~ Cluster, ncol = 3) +
+  labs(title = "Distinctive Terms of Clusters") +
+  theme(strip.text.x     = element_text(),
+        panel.background = element_rect(fill = "white"),
+        plot.title = element_text(hjust = 0.5))
+
+ggsave("cluster_wordcloud.jpeg", path = path)
+```
+
+\newpage
+## Topic Emergence
+We compare the content of the 2014-2015 (oldest available) and 2018-2019 (most recent) course catalogues to identify terms and themes that have declined and emerged these last few years. To accomplish this, we compare the frequency of the terms in the two catalogues by taking their `log ratio`. A positive value indicates that the term has become more frequent since 2014-2015 and a negative value indicates a decline in the use of the term. We plot the forty terms with the highest absolute `log ratio`. Again, we display the information both as a barplot and wordcloud.
+```{r log_ratio}
+d_emergence <- d_description_stem %>%
+  filter(`Calendar Year` %in% c("2014-2015", "2018-2019")) %>%
+  count(`Calendar Year`, `word`) %>%
+  spread(key = `Calendar Year`, value = n, fill = 0) %>%
+  rename(new = "2018-2019", old = "2014-2015") %>%
+  mutate(n         = old + new,
+         log_ratio = log( ((new+1) / (sum(new)+1)) /
+                          ((old+1) / (sum(old)+1)) ),
+         Trend     = case_when(log_ratio<0 ~ "Declining",
+                               log_ratio>0 ~ "Emerging")) %>%
+  filter(n > 15) %>%
+  top_n(50, abs(log_ratio))
+
+print(d_emergence) 
+```
+
+### Results
+
+From the two plots, we can observe that topics that have made the news these last few years such as religion, migrationa and climate have become more important in the catalogues. This shows that the college has done a godd job at adapting its curriculum to the development of the world. We also observe that the themes of sexuality (with terms like `sex`, `sexual` and `sexuality`) and terrorism (`terrorism`, `crime`) have declined. It is interesting to note that the terms `globalization`, `poverty` and `sustainability` have become less important. As for the term `portal`, its "emergence" is due to the introduction of a new online student *portal* system at the college. The terms is not mentioned once in 2014-2015 and appears `19` times in 2018-2019. This shows that human interpretation and a good knowledge of the data is crucial to avoid false alarms in such analysis.
+
+```{r emergence visual, echo = FALSE, message = FALSE}
+
+# Folder to save plots
+path <- "Plots/2 Topic Emergence"
+
+# Barplot
+d_emergence %>%
+  ggplot(aes(reorder(word, log_ratio), log_ratio, fill = Trend)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = NULL, title = "Emerging and Declining Terms Between 2014-2015 and 2018-2019", x = "Log Ratio") +
+  theme_light() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("Barplot.jpeg", path = path)
+
+# Word cloud
+d_emergence %>%
+  mutate(angle = 10 * sample(-2:2, n(), replace = T, prob = c(1,1,4,1,1))) %>%
+  ggplot(aes(size = abs(log_ratio), label = word, angle = angle, color = Trend, angle_group = log_ratio < 0)) +
+  geom_text_wordcloud_area(area_corr_power = 1,
+                           eccentricity    = 1,
+                           rm_outside      = T) +
+  labs(title = "Emerging (blue) and Declining (red) Terms Between 2014-2015 and 2018-2019") +
+  scale_radius(range = c(3, 14), limits = c(0, NA)) +
+  theme(panel.background = element_rect(fill = "white"),
+        plot.title = element_text(hjust = 0.5))
+
+ggsave("Wordcloud.jpeg", path = path)
+```
+
+\newpage
+## LDA
+Finally, we use the Latent Dirichlet Allocation (LDA) algorithm to conduct a topic analysis of the college's curriculum at the course- and the cluster-level. Given a corpus of documents and a predetermined number of topics, the LDA algorithm outputs a topic model which gives the importance of each term to the topics (beta distribution) and the importance of each topic to the documents (gamma distribution). In other words, the LDA find the mixture of words associated with each topic and the mixture of topics associated with each document. The advantage of the LDA over regular clustering methods is that is allows for overlap of terms across topics and of topics across documents, thereby offering a model that is closer to natural language.
+
+### Fitting Model
+In the LDA algorithm, the number of topics has to be determined in advance. We build four models with respectively `5`, `12`, `17` and `25` topics. For
+
+TODO: use package `ldatuning` to determine best number of topics. (https://cran.r-project.org/web/packages/ldatuning/vignettes/topics.html)
+
+```{r cast}
+d_cast <- d_description_stem %>%
+  filter(`Calendar Year` == "2018-2019") %>%
+  count(Code, word) %>%
+  cast_dtm(Code,word, n)
+```
+
+```{r, fitting LDA, cache = TRUE}
+LDA_5  <- LDA(d_cast, k = 5 , control = list(seed = 123))
+LDA_12 <- LDA(d_cast, k = 12, control = list(seed = 123))
+LDA_17 <- LDA(d_cast, k = 17, control = list(seed = 123)) # There are 17 clusters
+LDA_25 <- LDA(d_cast, k = 25, control = list(seed = 123))
+```
+
+### Results
+We present the output of a topic model with three plots which respectively show (i) the most important terms for each topic (ii) the main courses/clusters of each topic and (iii) the most important topics of each course/cluster. For each model, we present the results at the course- an the cluster-level. To keep the script concise, we only include a selection of plots for the model with `12` topics. In the first four plots, the topics are unlabelled; in the last three, the topics are labelled. The complete output of each model (two triplets of plots with unlabelled topics) can be found in the directory.
+
+Firstly, the third plot shows that most topics are covered in several clusters. Fot instance, `topic 10` is covered in several clusters of the humanities (`History`, `Literature` and `Philosophy`) and social sciences (`International Relations`, `International Law` and `Economics`). For a liberal arts program this is a desirable outcome since it encourages students interested in a particular topic to take classes in different clusters, thereby broading their acadmeic horizon[^8]. At the same time, this pattern may be artificially created by the fact that there are much more than twelve topics present in the curriculum, meaning that the LDA algorithm combines unrelated themes into the same topic. This is for instance the case for `topic 3` which combines the themes of law (`law`, `legal`) and international (`european`, `international`) (see first plot). Increasing the number of topics in the model should solve this issue.
+
+We also observe that the distribution of topics is very different at the course and the cluster level. While courses are usually heavily dominated by a single topics, clusters contain several major topics. Looking at the second plot, we observe that the courses `Computer Science`, `Optimization` and `Philosophy of Language` for instance are heavyly dominated by `topic 7`. The fourth plots shows that most clusters contain several topics. Interestingly, this graph shows that the same topic (`topic 10`) dominates the clusters `History`, `International Relations` and `Literature`. This indicates either that the content of the three clusters share some similarity or that `topic 10` contains several different themes.
+
+So far, we have only analyzed models with unlabelled topics. In order to give more substance to our analysis, we assign labels to the topics. To accomplish this, we look at the first plot and identify the common theme(s) among the terms. Some topics are easier to label than others. `topic 6` is for instance pretty straightforward: it is dominated by the term `search` and also contain the terms `qualitative`, `read`, `interview` and `study`: `topic 6` corresponds to qualitative research skills and we therefore label it `Qual. Res.`[^10]. Labelling `topic 7` on the other hand is more trick. The best label I could find is `Engineering`. I have labelled each topic and present the results in the last three plots.
+
+The labels give us a better image of the actual content of the courses and the clusters. The last plot indicate sthta most clusters cover the topics that we expect them to cover, indicating that the current division of courses in clusters is backed up by the content of the courses. As expected, the cluster `Sociology` covers the topics of `Society` and `Culture` and the cluster `Cultural Studies` covers the topics of `Arts`, `Culture` and `Qual. Res.`. Yet, I am surprised by the absence of certain topics in some clusters. For instance, the cluster `history` lacks the topics of `culture` and `society` and the topic of `research` is also barely present in `Biomedical Sciences`. The former shows the heavy focus of the `history` cluster on war and conflicts (`Foreign Policy`) and the latter reflects the absence of research projects in the classes of the biomedical cluster.
+
+```{r function visualize_LDA, echo = FALSE}
+visualize_LDA <- function(results, per_cluster = FALSE, topic_names = NULL, k, print_pdf = c(F,F,F), path = "Plots/3 Topic Modeling"){
+  
+  # Setup
+  topics <- if(is.null(topic_names)){  tibble(topic_number = 1 : 100,
+                                              topic_letter = paste("Topic", topic_number))
+  }else{                               tibble(topic_letter = topic_names,
+                                              topic_number = 1 : length(topic_names)) # add plot_level = labeled.
+  }
+  
+  is_labelled <- if(is.null(topic_names)) NULL
+                 else                     "(labeled)"
+  
+  plot_level <- if(per_cluster)  "Clusters"
+                else             "Courses"
+  
+  # Beta Distribution: term-topic
+  term_topic <- tidy(results, matrix = "beta") %>%
+    left_join(topics, by = c("topic" = "topic_number")) %>%
+    mutate(topic = topic_letter)
+  
+  g <- term_topic %>%
+    group_by(topic) %>%
+    top_n(10, beta) %>%
+    ungroup %>%
+    ggplot(aes(x = reorder_within(term, by = beta, within = topic), y = beta, fill = topic)) +
+    geom_col(show.legend = F) +
+    facet_wrap(~ topic, scales = "free", ncol = 3) +
+    scale_x_reordered() +
+    labs(x = "Terms", y = "Beta", title = paste("Main Terms of each Topic (k =", k, ")")) +
+    coord_flip() +
+    theme_light() +
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  if(print_pdf[1]) print(g)
+  ggsave(paste(plot_level, "(k =", k, ")", is_labelled, "beta.jpeg"), path = path)
+  
+  # Gamma Distribution: document-topic
+  doc_topic <- tidy(results, matrix = "gamma") %>%
+    left_join(topics, by = c("topic" = "topic_number")) %>%
+    left_join(d_course, by = c("document" = "Code")) %>%
+    mutate(topic = topic_letter)
+        
+  if(!per_cluster){
+    doc_topic <- doc_topic %>%
+      filter(`Course Title` %in% twelve_course) %>%
+      rename(facet = Title_short)
+  }else{
+    doc_topic <- doc_topic %>%
+      filter(!is.na(Cluster)) %>%
+      rename(facet = Cluster) %>%
+      group_by(facet, topic) %>%
+      summarise(gamma = sum(gamma)) %>%
+      ungroup
+  }
+  
+  # Plot 1
+  g <- doc_topic %>%
+    filter(gamma > 0.05) %>%
+    ggplot(aes(reorder_within(facet, by = gamma, within = topic), y = gamma, fill = topic)) +
+    geom_col(show.legend = F) +
+    facet_rep_wrap(~ topic, scales = "free", repeat.tick.labels = "bottom", ncol = 3) +
+    scale_x_reordered() +
+    coord_flip() +
+    labs(x = NULL, y = "Gamma", title = paste("Main", plot_level, "of each Topic (k =", k, ")")) +
+    theme_light() +
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  if(print_pdf[2]) print(g)
+  ggsave(paste(plot_level, "(k =", k, ")", is_labelled, "gamma1.jpeg"), path = path)
+  
+  # Plot 2
+  g <- doc_topic %>%
+    filter(gamma > 0.05) %>%
+    ggplot(aes(reorder_within(topic, by = gamma, within = facet), y = gamma, fill = topic)) +
+    geom_col(show.legend = F) +
+    facet_rep_wrap(~ facet, scales = "free", repeat.tick.labels = "bottom", ncol = 3) +
+    scale_x_reordered() +
+    coord_flip() +
+    labs(x = NULL, y = "Gamma", title = paste("Main Topics of ", plot_level, "(k =", k, ")")) +
+    theme_light() +
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  if(print_pdf[3]) print(g)
+  ggsave(paste(plot_level, "(k =", k, ")", is_labelled, "gamma2.jpeg"), path = path)
+  
+}
+```
+
+\newpage
+#### Unlabelled Topics
+```{r visualization LDA, echo = FALSE, message =  FALSE}
+# Course Level
+visualize_LDA(LDA_5 , k = 5 )
+visualize_LDA(LDA_12, k = 12, print_pdf = c(T,F,T))
+visualize_LDA(LDA_17, k = 17)
+visualize_LDA(LDA_25, k = 25)
+
+# Cluster Level
+visualize_LDA(LDA_5 , k = 5 , per_cluster = TRUE)
+visualize_LDA(LDA_12, k = 12, per_cluster = TRUE, print_pdf = c(F,T,T))
+visualize_LDA(LDA_17, k = 17, per_cluster = TRUE)
+visualize_LDA(LDA_25, k = 25, per_cluster = TRUE)
+```
+
+\newpage
+#### Labelled Topics
+```{r visualization LDA label, echo = FALSE, message =  FALSE}
+topic_names <- c("Arts", "Psycho/policy", "(Int.) Law",
+                 "Development", "Culture", "Qual. Res.",
+                 "Engineering", "Biology", "Society",
+                 "Foreign Policy", "Reserach", "Skills")
+
+visualize_LDA(LDA_12, k = 12, print_pdf = c(T,F,T), topic_names = topic_names)
+visualize_LDA(LDA_12, k = 12, per_cluster = TRUE, print_pdf = c(F,F,T), topic_names = topic_names)
+```
+
+[^1]: Ranging from artificial intelligence to Shakespeare and terrorism.
+
+[^2]: Courses are distributed among 17 clusters e.g. International Relation, Cultural Studies, Biomedical Science, etc.
+
+[^3]: Their format is relatively consistent across catalogues.
+
+[^7]: No course description exceeds two pages.
+
+[^8]: One of the objectives of the program.
+
+[^10]: This is a subjective choice and the reader may find a more fitting label.
+
+[^9]: We only plot a selection of twelve courses to keep the plots readable.
+
+[^11]: It also includes a variable with a shorter course title (`Title_short`) which we use use in the plots for a better readability.
