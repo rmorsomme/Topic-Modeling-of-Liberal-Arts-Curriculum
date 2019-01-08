@@ -158,14 +158,14 @@ stem_hunspell <- function(term) {
 }
 
 # Dictionary 
-my_dictionnary <- d_description_tidy %>%
+my_dictionary <- d_description_tidy %>%
   distinct(word) %>%
   mutate(word_stem = purrr::map_chr(.x = word,
                                     .f = stem_hunspell))
 
 # Full join
 d_description_stem <- d_description_tidy %>%
-  full_join(my_dictionnary, by = "word") %>%
+  full_join(my_dictionary, by = "word") %>%
   rename(word_original = word,
          word          = word_stem) %>%
   filter(!word %in% stop_words$word,
@@ -230,7 +230,7 @@ The tf-idf does a pretty good job at isolating the most important terms of the c
 
 ```{r tf-idf visualization course, echo = FALSE, message = FALSE, warning = FALSE}
 
-checkboxGroupInput("course_selected", "Courses", unique(tdm_course$`Course Title`)[1:10], "Conflict Resolution")
+checkboxGroupInput("course_selected", "Courses", unique(tdm_course$`Course Title`)[1:10], c("Conflict Resolution", "Argumentation I", "Research Project", "Law and Society", "Cultural Remembrances"))
 
 renderPlot({
   
@@ -250,7 +250,6 @@ renderPlot({
   theme(plot.title = element_text(hjust = 0.5))
   
 })
-
 renderPlot({
   
   tdm_course %>%
@@ -278,7 +277,7 @@ renderPlot({
 
 ```{r tf-idf visual cluster, echo = FALSE, message = FALSE, warning = FALSE}
 
-checkboxGroupInput("cluster_selected", "Cluster", unique(d_course$Cluster[!is.na(d_course$Cluster)]), "Sociology")
+checkboxGroupInput("cluster_selected", "Cluster", unique(d_course$Cluster[!is.na(d_course$Cluster)]), c("Sociology", "Governance", "Computer Science", "Biomedical Science", "Skills", "Business", "Mathematics", "Cultural Studies", "International Law"))
 
 renderPlot({
   
@@ -301,7 +300,6 @@ renderPlot({
           plot.title = element_text(hjust = 0.5))
   
 })
-
 renderPlot({
   
   tdm_cluster %>%
@@ -470,10 +468,7 @@ renderPlot({
   model   <- get(input$n_topic)
   
   tidy(model, matrix = "beta") %>%
-    left_join(tibble(topic_number = 1 : 100,
-                     topic_letter = paste("Topic", topic_number)),
-              by = c("topic" = "topic_number")) %>%
-    mutate(topic = topic_letter) %>%
+    mutate(topic = paste("Topic", topic)) %>%
     group_by(topic) %>%
     top_n(10, beta) %>%
     
@@ -487,21 +482,17 @@ renderPlot({
     theme(plot.title = element_text(hjust = 0.5))
   
 })
-
 renderPlot({
   
   model   <- get(input$n_topic)
 
   tidy(model, matrix = "gamma") %>%
-    left_join(tibble(topic_number = 1 : 100,
-                     topic_letter = paste("Topic", topic_number)),
-                     by = c("topic" = "topic_number")) %>%
     left_join(d_course, by = c("document" = "Code")) %>%
-    mutate(topic = topic_letter) %>%
-    filter(`Course Title` %in% input$course_selected_LDA) %>%
+    mutate(topic = paste("Topic", topic)) %>%
+    filter(`Course Title` %in% input$course_selected_LDA,
+           gamma > 0.05) %>%
     rename(facet = Title_short) %>%
     
-    filter(gamma > 0.05) %>%
     ggplot(aes(reorder_within(facet, by = gamma, within = topic), y = gamma, fill = topic)) +
     geom_col(show.legend = F) +
     facet_rep_wrap(~ topic, scales = "free", repeat.tick.labels = "bottom", ncol = 3) +
@@ -512,20 +503,16 @@ renderPlot({
     theme(plot.title = element_text(hjust = 0.5))
   
 })
-
 renderPlot({
   
   model   <- get(input$n_topic)
 
   tidy(model, matrix = "gamma") %>%
-    left_join(tibble(topic_number = 1 : 100,
-                     topic_letter = paste("Topic", topic_number)),
-                     by = c("topic" = "topic_number")) %>%
     left_join(d_course, by = c("document" = "Code")) %>%
-    mutate(topic = topic_letter) %>%
-    filter(`Course Title` %in% input$course_selected_LDA) %>%
+    mutate(topic = paste("Topic", topic)) %>%
+    filter(`Course Title` %in% input$course_selected_LDA,
+           gamma > 0.05) %>%
     rename(facet = Title_short) %>%
-    filter(gamma > 0.05) %>%
     
     ggplot(aes(reorder_within(topic, by = gamma, within = facet), y = gamma, fill = topic)) +
     geom_col(show.legend = F) +
@@ -537,7 +524,6 @@ renderPlot({
     theme(plot.title = element_text(hjust = 0.5))
   
 })
-
 ```
 
 ```{r, echo = FALSE}
@@ -553,11 +539,8 @@ renderPlot({
   model   <- get(input$n_topic_cluster)
 
   tidy(model, matrix = "gamma") %>%
-    left_join(tibble(topic_number = 1 : 100,
-                     topic_letter = paste("Topic", topic_number)),
-                     by = c("topic" = "topic_number")) %>%
     left_join(d_course, by = c("document" = "Code")) %>%
-    mutate(topic = topic_letter) %>%
+    mutate(topic = paste("Topic", topic)) %>%
     filter(Cluster %in% input$cluster_selected_LDA) %>%
     rename(facet = Cluster) %>%
     group_by(facet, topic) %>%
@@ -574,17 +557,13 @@ renderPlot({
     theme(plot.title = element_text(hjust = 0.5))
   
 })
-
 renderPlot({
   
   model   <- get(input$n_topic_cluster)
 
   tidy(model, matrix = "gamma") %>%
-    left_join(tibble(topic_number = 1 : 100,
-                     topic_letter = paste("Topic", topic_number)),
-                     by = c("topic" = "topic_number")) %>%
     left_join(d_course, by = c("document" = "Code")) %>%
-    mutate(topic = topic_letter) %>%
+    mutate(topic = paste("Topic", topic)) %>%
     filter(Cluster %in% input$cluster_selected_LDA) %>%
     rename(facet = Cluster) %>%
     group_by(facet, topic) %>%
@@ -601,15 +580,66 @@ renderPlot({
     theme(plot.title = element_text(hjust = 0.5))
   
 })
-
 ```
 
 #### Labelled Topics (TODO)
-```{r visualization LDA label, message =  FALSE, eval = FALSE}
-topic_names <- c("Arts", "Psycho/policy", "(Int.) Law",
+```{r visualization LDA label, message =  FALSE, echo = FALSE}
+`Topic Name` <- c("Arts", "Psycho/policy", "(Int.) Law",
                  "Development", "Culture", "Qual. Res.",
                  "Engineering", "Biology", "Society",
                  "Foreign Policy", "Reserach", "Skills")
+Topic <- paste("Topic", 1 : 12)
+table_topic <- tibble(Topic, `Topic Name`, topic_number = 1 : 12)
+print(table_topic[,1:2])
+
+# Plot: topic - terms
+tidy(LDA_12, matrix = "beta") %>%
+  left_join(table_topic, by = c("topic" = "topic_number")) %>%
+  group_by(`Topic Name`) %>%
+  top_n(10, beta) %>%
+    
+  ggplot(aes(x = reorder_within(term, by = beta, within = `Topic Name`), y = beta, fill = `Topic Name`)) +
+  geom_col(show.legend = F) +
+  facet_wrap(~ `Topic Name`, scales = "free", ncol = 3) +
+  scale_x_reordered() +
+  labs(x = "Terms", y = "Beta", title = "Main Terms of each Topic") +
+  coord_flip() +
+  theme_light() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Plot: topic - cluster
+tidy(LDA_12, matrix = "gamma") %>%
+  left_join(table_topic, by = c("topic" = "topic_number")) %>%
+  left_join(d_course, by = c("document" = "Code")) %>%
+  group_by(Cluster, `Topic Name`) %>%
+  summarise(gamma = sum(gamma)) %>%
+  filter(gamma > 0.05) %>%
+    
+ggplot(aes(reorder_within(Cluster, by = gamma, within = `Topic Name`), y = gamma, fill = `Topic Name`)) +
+  geom_col(show.legend = F) +
+  facet_rep_wrap(~ `Topic Name`, scales = "free", repeat.tick.labels = "bottom", ncol = 3) +
+  scale_x_reordered() +
+  coord_flip() +
+  labs(x = NULL, y = "Gamma", title = "Main Clusters of each Topic") +
+  theme_light() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Plot: cluster - topic
+tidy(LDA_12, matrix = "gamma") %>%
+  left_join(table_topic, by = c("topic" = "topic_number")) %>%
+  left_join(d_course, by = c("document" = "Code")) %>%
+  group_by(Cluster, `Topic Name`) %>%
+  summarise(gamma = sum(gamma)) %>%
+  filter(gamma > 0.05) %>%
+    
+  ggplot(aes(reorder_within(`Topic Name`, by = gamma, within = Cluster), y = gamma, fill = Cluster)) +
+    geom_col(show.legend = F) +
+    facet_rep_wrap(~ Cluster, scales = "free", repeat.tick.labels = "bottom", ncol = 3) +
+    scale_x_reordered() +
+    coord_flip() +
+    labs(x = NULL, y = "Gamma", title = "Main Clusters of each Topic") +
+    theme_light() +
+    theme(plot.title = element_text(hjust = 0.5))
 ```
 
 [^1]: Ranging from artificial intelligence to Shakespeare and terrorism.
