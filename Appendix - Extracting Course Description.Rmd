@@ -9,6 +9,7 @@ We extract the description of each course from the course catalogues. In the `Se
 
 We then loop (`Loop 2`) through the first pages of the course descriptions. In the loop, we check if the description is one- or two-page long: if the following page is the first page of a description, then the description is only one page long; otherwise, the description is two page long and consists of the current and the following page[^7]. Once we have a course description, we use `substring(first = 1, last = 7)` to extract the code of the course (3 letters and 4 numbers) and save the description, with its code and the year of the catalogue in the tibble `d_description`.
 ```{r description, cache = TRUE}
+
 # Setup
 n_catalogue    <- length(corpus)
 calendar_years <- c("2014-2015", "2015-2016", "2016-2017", "2017-2018", "2018-2019")
