@@ -417,7 +417,6 @@ save(LDA_5, LDA_12, LDA_17, LDA_25,
      file = "LDA.RDATA")
 ```
 
-
 ### Results
 We present the output of a topic model with three plots which respectively show (i) the most important terms for each topic (ii) the main courses/clusters of each topic and (iii) the most important topics of each course/cluster. For each model, we present the results at the course- an the cluster-level. To keep the script concise, we only include a selection of plots for the model with `12` topics. In the first four plots, the topics are unlabelled; in the last three, the topics are labelled. The complete output of each model (two triplets of plots with unlabelled topics) can be found in the directory.
 
@@ -632,7 +631,7 @@ tidy(LDA_12, matrix = "gamma") %>%
   summarise(gamma = sum(gamma)) %>%
   filter(gamma > 0.05) %>%
     
-  ggplot(aes(reorder_within(`Topic Name`, by = gamma, within = Cluster), y = gamma, fill = Cluster)) +
+  ggplot(aes(reorder_within(`Topic Name`, by = gamma, within = Cluster), y = gamma, fill = `Topic Name`)) +
     geom_col(show.legend = F) +
     facet_rep_wrap(~ Cluster, scales = "free", repeat.tick.labels = "bottom", ncol = 3) +
     scale_x_reordered() +
