@@ -455,7 +455,7 @@ load("LDA.RDATA")
 
 ```{r, echo = FALSE}
 
-checkboxGroupInput("course_selected_LDA", "Courses", unique(tdm_course$`Course Title`)[1:10], "Conflict Resolution")
+checkboxGroupInput("course_selected_LDA", "Courses", unique(tdm_course$`Course Title`)[1:20], unique(tdm_course$`Course Title`)[10:20])
 
 radioButtons("n_topic", "Number of Topics",
              choiceNames  = list("5", "12", "17", "25"),
@@ -527,7 +527,7 @@ renderPlot({
 
 ```{r, echo = FALSE}
 
-checkboxGroupInput("cluster_selected_LDA", "Cluster", unique(d_course$Cluster[!is.na(d_course$Cluster)]), "Sociology")
+checkboxGroupInput("cluster_selected_LDA", "Cluster", unique(d_course$Cluster[!is.na(d_course$Cluster)]), unique(d_course$Cluster[!is.na(d_course$Cluster)]))
 
 radioButtons("n_topic_cluster", "Number of Topics", selected = "12",
              choiceNames  = list("5", "12", "17", "25"),
