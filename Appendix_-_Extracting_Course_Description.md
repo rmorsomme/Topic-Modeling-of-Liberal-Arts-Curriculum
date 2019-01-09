@@ -1,17 +1,13 @@
----
-title: "Appendix - Extracting Course Description"
-author: "Raphaël Morsomme"
-date  : "`r Sys.Date()`"
-output:
-  github_document:
-    toc: TRUE
----
+Appendix - Extracting Course Description
+================
+RaphaÃ«l Morsomme
+2019-01-09
 
-We extract the description of each course from the course catalogues. In the `Setup`, we create several objects that we use in the following two loops. We first loop (`Loop 1`) through each course catalogue present in `corpus`. In the loop, we first identify the section of the catalogue containing the course descriptions and assign it to `cat_description`. We then exclude from `cat_descriptions` the headers, appendix, etc, so that it only contains course descriptions. We take advantage of the fact that the the first line of a course description always starts with the code of the course, meaning that the first three characters of the first page of a description are one of the following `r c("COR", "HUM", "SCI", "SSC", "SKI", "PRO", "UGR", "CAP")`. Using `grep()`, we can therefore easily identify the first page of each description which we assign to `first_pages_description`.
+We extract the description of each course from the course catalogues. In the `Setup`, we create several objects that we use in the following two loops. We first loop (`Loop 1`) through each course catalogue present in `corpus`. In the loop, we first identify the section of the catalogue containing the course descriptions and assign it to `cat_description`. We then exclude from `cat_descriptions` the headers, appendix, etc, so that it only contains course descriptions. We take advantage of the fact that the the first line of a course description always starts with the code of the course, meaning that the first three characters of the first page of a description are one of the following COR, HUM, SCI, SSC, SKI, PRO, UGR, CAP. Using `grep()`, we can therefore easily identify the first page of each description which we assign to `first_pages_description`.
 
-We then loop (`Loop 2`) through the first pages of the course descriptions. In the loop, we check if the description is one- or two-page long: if the following page is the first page of a description, then the description is only one page long; otherwise, the description is two page long and consists of the current and the following page[^7]. Once we have a course description, we use `substring(first = 1, last = 7)` to extract the code of the course (3 letters and 4 numbers) and save the description, with its code and the year of the catalogue in the tibble `d_description`.
-```{r description, cache = TRUE, message = FALSE}
+We then loop (`Loop 2`) through the first pages of the course descriptions. In the loop, we check if the description is one- or two-page long: if the following page is the first page of a description, then the description is only one page long; otherwise, the description is two page long and consists of the current and the following page\[^7\]. Once we have a course description, we use `substring(first = 1, last = 7)` to extract the code of the course (3 letters and 4 numbers) and save the description, with its code and the year of the catalogue in the tibble `d_description`.
 
+``` r
 library(tm)
 library(tidyverse)
 
@@ -87,3 +83,18 @@ for(n in 1 : n_catalogue){
 
 print(d_description)
 ```
+
+    ## # A tibble: 831 x 3
+    ##    Code    `Calendar Year` Description                                    
+    ##    <chr>   <chr>           <chr>                                          
+    ##  1 COR1002 2014-2015       "COR1002 - Philosophy of Science\r\nCourse coo~
+    ##  2 COR1003 2014-2015       "COR1003 - Contemporary World History\r\nCours~
+    ##  3 COR1004 2014-2015       "COR1004 - Political Philosophy\r\nCourse coor~
+    ##  4 COR1005 2014-2015       "COR1005 - Modeling Nature\r\nCourse coordinat~
+    ##  5 HUM1003 2014-2015       "HUM1003 - Cultural Studies I: Doing Cultural ~
+    ##  6 HUM1007 2014-2015       "HUM1007 - Introduction to Philosophy\r\nCours~
+    ##  7 HUM1010 2014-2015       "HUM1010 - Common Foundations of Law in Europe~
+    ##  8 HUM1011 2014-2015       "HUM1011 - Introduction to Art; Representation~
+    ##  9 HUM1012 2014-2015       "HUM1012 - Pop Songs and Poetry: Theory and An~
+    ## 10 HUM1013 2014-2015       "HUM1013 - The Idea of Europe: The Intellectua~
+    ## # ... with 821 more rows
