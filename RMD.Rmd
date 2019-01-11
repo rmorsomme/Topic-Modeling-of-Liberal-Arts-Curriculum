@@ -4,8 +4,8 @@ author: "Raphaël Morsomme"
 date  : "`r Sys.Date()`"
 output:
   html_document:
+    toc: TRUE
     number_section: TRUE
-    fig_height: 8.5
 runtime: shiny
 ---
 
@@ -15,17 +15,17 @@ library(tidytext)
 
 library(ggwordcloud) # Word Clouds
 library(hunspell)    # Stemmer
-library(topicmodels) # LDA
+library(topicmodels) # Latent Dirichlet Allocation algorithm
 library(lemon)       # fine tune ggplot
 library(tm)          # Corpus()
 ```
 
 # Introduction
-University departments often have little knowledge of the actual content of the programs they offer. Yet, having a good understanding of what each course of a program covers is paramount to maintain the quality of the program.
+University departments often have little knowledge of the actual content of their study programs. Yet, having a good understanding of what each course of a program covers is paramount to maintain and education of quality.
 
-In this script, I conduct a topic modeling exercise of the curriculum offered by the University College Maastricht (UCM), Maastricht University, the Netherlands. UCM offers a bachelor in Liberal Arts and Science. Its curriculum contains over two hundred courses on virtually every topic conceivable[^1], making it a great subject for a topic modeling exercise. The analysis is exploratory in nature: instead of answering a specific research question, I explore the data to obtain a better understanding of the content of UCM's curriculum.
+In this script, I conduct a topic modeling exercise on the curriculum offered by the University College Maastricht (UCM), Maastricht University, the Netherlands. UCM offers a bachelor in Liberal Arts and Science. Its curriculum contains over two hundred courses on virtually every topic conceivable[^1], making it a great subject for a topic modeling exercise.
 
-To accomplish this, I conduct three analyses. First, I use the tf-idf to identify the most distcinctive terms of each course and cluster of courses. Then, I compare the content of the 2014-2015 and 2018-2019 course catalogues to identify the themes that have emerged and declined these last few years. Finally, I use the Latent Dirichlet Allocation algorithm to create a topic model of the 2018-2019 curriculum, both at the course- and at the cluster-level. The data I use in the analyses are the course descriptions present in the course catalogues.
+The analysis is exploratory in nature: instead of answering a specific research question, I explore the data to obtain a better understanding of the content of UCM's curriculum. To accomplish this, I conduct three analyses. First, I use the tf-idf to identify the most distcinctive terms of each course. Second, I compare the curriculum across years to identify which themes have emerged and declined. Finally, I use the Latent Dirichlet Allocation algorithm to create a topic model of the 2018-2019 curriculum, both at the course- and at the cluster-level. The textual data are the course descriptions present in the course catalogues.
 
 # Data Preparation
 
@@ -34,10 +34,10 @@ load("data_prep.RDATA")
 ```
 
 ## Overview
-The data require some preparation before they can be analyzed. We starting by importing a dataset on the courses and the course catalogues (saved as pdf) from the directory. We then extract the descriptions of the courses from the course catalogues. These descriptions are one to two pages long and form the textual data that we will analyze. Lastly, we transform the data into the *[tidy text format](https://www.tidytextmining.com/tidytext.html)* and stem the terms.
+We starting by importing the course catalogues and a data set containing information at the course level. We then extract the descriptions of the courses from the course catalogues. These descriptions are one to two pages long and form the textual data that we will analyze. Lastly, we transform the data into the *[tidy text format](https://www.tidytextmining.com/tidytext.html)*, stem the terms and remove the stop-words.
 
 ## Importing
-We import two datasets from the directory. `d_course` is a tiblle indicating the code, name and cluster[^2] of each course[^11]. `corpus` is a corpus containing the five most recent course catalogues of UCM. Course catalogues are published every year and contain a descritpion of each course of one or two pages.
+We import two datasets from the directory. `d_course` is a tiblle indicating the code, name and cluster[^2] of each course[^11]. `corpus` is a corpus containing the five most recent course catalogues of UCM. Course catalogues are published every year and contain a descritpion of each course that is one or two pages long.
 
 ```{r}
 d_course <- read_csv("Course.csv", col_type = cols())
@@ -168,6 +168,7 @@ d_description_stem <- d_description_tidy %>%
   full_join(my_dictionary, by = "word") %>%
   rename(word_original = word,
          word          = word_stem) %>%
+  # Removing stop words
   filter(!word %in% stop_words$word,
          !word %in% as.character(1:1e3))
 ```
@@ -200,41 +201,40 @@ scale_y_reordered <- function(..., sep = "___") {
 }
 ```
 ## Overview
-Now that the textual data is stored in a tidy text format and is stemmed, we can model the content of the curriculum. We conduct three analyses. First, we identify the most important terms of each course and cluster with the tf-idf. Next, we identify terms that have emerged and declined in the curriculum. Finally, we use the LDA algorithm (a popular technique for topic modeling) to build a topic model of the 2018-2019 curriculum, both at the course- and cluster-level.
+We conduct three analyses. First, we identify the most important terms of each course and cluster with the tf-idf. Next, compare the curriculum across years to identify which themes have emerged and declined. Finally, we use the LDA algorithm (a popular technique for topic modeling) to build a topic model of the 2018-2019 curriculum, both at the course- and cluster-level.
 
 ## TF-IDF
-The tf-idf is a popular measure to identify the most important terms of each document belonging to a corpus. By penalizing terms that occur in many documents, it allows us to focus on the terms that are specific to each document. Terms which appear in a large number of course descriptions such as "learn" or "student" tell us little about the content of the course and therefore have a low tf-idf. This way, we can identify the most *distinctive* terms of each course/cluster and get a feel of the topics that they cover.
+The tf-idf is a popular measure to identify the most important terms of documents that belong to a corpus. By penalizing terms that occur in many documents, tf-idf allows us to focus on the terms that are specific to each document. In our case, terms such as "learn" or "student", which appear in a large number of course descriptions and are therefore not informative, have a low tf-idf. This way, we can identify the most *distinctive* terms of each course/cluster and get a feel of the topics they cover.
 
-We use the function `bind_tf_idf()` to obtain the tf-idf of each term for the year 2018-2019. We then identify the most distinctive terms of each cluster and course[^9] and display them both as barplots and word clouds. In the latter, the size and the color of a term indicates its tf-idf.
+We use the function `bind_tf_idf()` to obtain the tf-idf of each term for the year 2018-2019. We then identify the most important terms of each cluster and course[^9] and display them both as barplots and word clouds. In the latter, the size and the color of a term indicates its tf-idf.
 
 ```{r tdm}
-tdm_course <- d_description_stem %>%
+tf_idf <- d_description_stem %>%
   filter(`Calendar Year` == "2018-2019") %>%
   count(Code, word, sort = T) %>%
   bind_tf_idf(term = word, document = Code, n = n) %>%
   left_join(d_course, by = "Code")
+  
 
-print(tdm_course)
+print(tf_idf)
 
-tdm_cluster <- d_description_stem %>%
-  filter(`Calendar Year` == "2018-2019") %>%
-  left_join(d_course, by = "Code") %>%
-  count(Cluster, word, sort = T) %>%
-  bind_tf_idf(term = word, document = Cluster, n = n)
-
-print(tdm_cluster)
+tf_idf_cluster <- tf_idf %>%
+  group_by(Cluster, word) %>%
+  summarise(tf_idf = sum(tf_idf),
+            n      = sum(n)) %>%
+  ungroup
 ```
 
 ### Results
-The tf-idf does a pretty good job at isolating the most important terms of the courses/clusters. If the names of the courses/clusters were absent from the plots, it would be fairly easy to guess them from the terms. We also observe interesting elements concerning the content of the clusters. For instance, while the cluster `History` gives a central place to the European continent (with terms like Europe, european), the cluster `International Relations` focuses more on China (chinese).
+The tf-idf does a pretty good job at identifying the most important terms of the courses/clusters. If the names of the courses/clusters were absent from the plots, it would be fairly easy to guess them from the terms. We also observe interesting elements concerning the content of the clusters. For instance, while the cluster `History` gives a central place to the European continent (with terms like Europe, european), the cluster `International Relations` focuses more on China (chinese).
 
 ```{r tf-idf visualization course, echo = FALSE, message = FALSE, warning = FALSE}
 
-checkboxGroupInput("course_selected", "Courses", unique(tdm_course$`Course Title`)[1:10], c("Conflict Resolution", "Argumentation I", "Research Project", "Law and Society", "Cultural Remembrances"))
+checkboxGroupInput("course_selected", "Courses", sort(unique(tf_idf$`Course Title`)), unique(tf_idf$`Course Title`)[10 : 15], inline = TRUE)
 
 renderPlot({
   
-  tdm_course %>%
+  tf_idf %>%
   filter(`Course Title` %in% input$course_selected, 
          n >= 2) %>%
   group_by(Code) %>%
@@ -244,7 +244,7 @@ renderPlot({
   geom_col(show.legend = FALSE) +
   labs(title = "Distinctive Terms of Courses", x = NULL, y = "tf-idf") +
   scale_x_reordered() +
-  facet_wrap(~ Title_short, scales = "free", ncol = 3) +
+  facet_wrap(~ Title_short, scales = "free") +
   coord_flip() +
   theme_light() +
   theme(plot.title = element_text(hjust = 0.5))
@@ -252,7 +252,7 @@ renderPlot({
 })
 renderPlot({
   
-  tdm_course %>%
+  tf_idf %>%
     filter(`Course Title` %in% input$course_selected, 
            n >= 2) %>%
     group_by(Code) %>%
@@ -267,7 +267,7 @@ renderPlot({
                              rm_outside      = T) +
     scale_radius(range = c(3, 7), limits = c(0, NA)) +
     scale_color_gradient(low = "red", high = "blue") +
-    facet_wrap(~ `Course Title`, ncol = 3) +
+    facet_wrap(~ `Course Title`) +
     labs(title = "Distinctive Terms of Courses") +
     theme(panel.background = element_rect(fill = "white"),
           plot.title = element_text(hjust = 0.5))
@@ -277,11 +277,11 @@ renderPlot({
 
 ```{r tf-idf visual cluster, echo = FALSE, message = FALSE, warning = FALSE}
 
-checkboxGroupInput("cluster_selected", "Cluster", unique(d_course$Cluster[!is.na(d_course$Cluster)]), c("Sociology", "Governance", "Computer Science", "Biomedical Science", "Skills", "Business", "Mathematics", "Cultural Studies", "International Law"))
+checkboxGroupInput("cluster_selected", "Cluster", sort(unique(d_course$Cluster[!is.na(d_course$Cluster)])), unique(d_course$Cluster)[1 : 6], inline = TRUE)
 
 renderPlot({
   
-  tdm_cluster %>%
+  tf_idf_cluster %>%
     filter(n >= 5,
            Cluster %in% input$cluster_selected) %>%
     group_by(Cluster) %>%
@@ -293,7 +293,7 @@ renderPlot({
     geom_col(show.legend = FALSE) +
     labs(title = "Distinctive Terms of Clusters", x = NULL, y = "tf-idf") +
     scale_x_reordered() +
-    facet_wrap(~ Cluster, scales = "free", ncol = 3) +
+    facet_wrap(~ Cluster, scales = "free") +
     coord_flip() +
     theme_light() +
     theme(strip.text.x = element_text(),
@@ -302,7 +302,7 @@ renderPlot({
 })
 renderPlot({
   
-  tdm_cluster %>%
+  tf_idf_cluster %>%
     filter(n >= 5,
            Cluster %in% input$cluster_selected) %>%
     group_by(Cluster) %>%
@@ -316,7 +316,7 @@ renderPlot({
                              rm_outside      = T) +
     scale_radius(range = c(3, 6), limits = c(0, NA)) +
     scale_color_gradient(low = "red", high = "blue") +
-    facet_wrap(~ Cluster, ncol = 3) +
+    facet_wrap(~ Cluster) +
     labs(title = "Distinctive Terms of Clusters") +
     theme(strip.text.x     = element_text(),
           panel.background = element_rect(fill = "white"),
@@ -326,11 +326,11 @@ renderPlot({
 ```
 
 ## Topic Emergence
-We compare the content of the 2014-2015 (oldest available) and 2018-2019 (most recent) course catalogues to identify terms and themes that have declined and emerged these last few years. To accomplish this, we compare the frequency of the terms in the two catalogues by taking their `log ratio`. A positive value indicates that the term has become more frequent since 2014-2015 and a negative value indicates a decline in the use of the term. We plot the forty terms with the highest absolute `log ratio`. Again, we display the information both as a barplot and wordcloud.
+We compare the content of the curriculum across years to identify terms and themes that have declined and emerged. To accomplish this, we compare the frequency of the terms in the two catalogues by taking their `log ratio`. A positive value indicates that the term has become more frequent and a negative value indicates a decline in the use of the term. We plot the forty terms with the highest absolute `log ratio`. Again, we display the information both as a barplot and wordcloud.
 
 ### Results
 
-From the two plots, we can observe that topics that have made the news these last few years such as religion, migrationa and climate have become more important in the catalogues. This shows that the college has done a godd job at adapting its curriculum to the development of the world. We also observe that the themes of sexuality (with terms like `sex`, `sexual` and `sexuality`) and terrorism (`terrorism`, `crime`) have declined. It is interesting to note that the terms `globalization`, `poverty` and `sustainability` have become less important. As for the term `portal`, its "emergence" is due to the introduction of a new online student *portal* system at the college. The terms is not mentioned once in 2014-2015 and appears `19` times in 2018-2019. This shows that human interpretation and a good knowledge of the data is crucial to avoid false alarms in such analysis.
+Let us compare the years `2014-2015` (oldest available) and `2018-2019` (most recent). From the two plots, we can observe that topics that have made the news these last few years such as religion, migrationa and climate have become more important in the catalogues. This shows that the college has done a good job at adapting its curriculum to the development of the world's affairs. We also observe that the themes of sexuality (with terms like `sex`, `sexual` and `sexuality`) and terrorism (`terrorism`, `crime`) have declined. It is interesting to note that the terms `globalization`, `poverty` and `sustainability` have become less important. As for the term `portal`, its "emergence" is due to the introduction of a new online student *portal* system at the college. The terms is not mentioned once in 2014-2015 and appears `19` times in 2018-2019. This shows that human interpretation and a good knowledge of the data is crucial in such analysis to avoid false alarms.
 
 ```{r emergence visual, echo = FALSE, message = FALSE}
 
@@ -391,10 +391,10 @@ renderPlot({
 ```
 
 ## LDA
-Finally, we use the Latent Dirichlet Allocation (LDA) algorithm to conduct a topic analysis of the college's curriculum at the course- and the cluster-level. Given a corpus of documents and a predetermined number of topics, the LDA algorithm outputs a topic model which gives the importance of each term to the topics (beta distribution) and the importance of each topic to the documents (gamma distribution). In other words, the LDA find the mixture of words associated with each topic and the mixture of topics associated with each document. The advantage of the LDA over regular clustering methods is that is allows for overlap of terms across topics and of topics across documents, thereby offering a model that is closer to natural language.
+Finally, we use the Latent Dirichlet Allocation (LDA) algorithm to conduct a topic analysis of the college's curriculum at the course- and the cluster-level. Given a corpus of documents and a predetermined number of topics, the LDA algorithm outputs a topic model which gives the importance of each term to the topics (beta distribution) and the importance of each topic to the documents (gamma distribution). In other words, the LDA finds the mixture of words associated with each topic and the mixture of topics associated with each document. The advantage of the LDA over regular clustering methods is that is allows for overlap of terms across topics and of topics across documents, thereby offering a model that is closer to natural language.
 
 ### Fitting Model
-In the LDA algorithm, the number of topics has to be determined in advance. We build four models with respectively `5`, `12`, `17` and `25` topics. For
+We build four models with respectively `5`, `12`, `17` and `25` topics for the year `2018-2019`.
 
 TODO: use package `ldatuning` to determine best number of topics. (https://cran.r-project.org/web/packages/ldatuning/vignettes/topics.html)
 
@@ -418,15 +418,15 @@ save(LDA_5, LDA_12, LDA_17, LDA_25,
 ```
 
 ### Results
-We present the output of a topic model with three plots which respectively show (i) the most important terms for each topic (ii) the main courses/clusters of each topic and (iii) the most important topics of each course/cluster. For each model, we present the results at the course- an the cluster-level. To keep the script concise, we only include a selection of plots for the model with `12` topics. In the first four plots, the topics are unlabelled; in the last three, the topics are labelled. The complete output of each model (two triplets of plots with unlabelled topics) can be found in the directory.
+We present the output of a topic model with three plots which respectively show (i) the most important terms for each topic (ii) the main courses/clusters of each topic and (iii) the most important topics of each course/cluster. For each model, we present the results at the course- an the cluster-level. The LDA is an unsupervised algorithm, meaning that the topic are unlabeled. In the final section, I label the topic manually.
 
-Firstly, the third plot shows that most topics are covered in several clusters. Fot instance, `topic 10` is covered in several clusters of the humanities (`History`, `Literature` and `Philosophy`) and social sciences (`International Relations`, `International Law` and `Economics`). For a liberal arts program this is a desirable outcome since it encourages students interested in a particular topic to take classes in different clusters, thereby broading their acadmeic horizon[^8]. At the same time, this pattern may be artificially created by the fact that there are much more than twelve topics present in the curriculum, meaning that the LDA algorithm combines unrelated themes into the same topic. This is for instance the case for `topic 3` which combines the themes of law (`law`, `legal`) and international (`european`, `international`) (see first plot). Increasing the number of topics in the model should solve this issue.
+Let us set the number of topics to `12` and observe the plots at the cluster level. Most topics are covered by several clusters. Fot instance, `topic 10` is covered in several clusters of the humanities (`History`, `Literature` and `Philosophy`) and social sciences (`International Relations`, `International Law` and `Economics`). For a liberal arts program this is a desirable outcome since it encourages students interested in a particular topic to take classes in different clusters, thereby broading their acadmeic horizon[^8]. At the same time, this pattern may be artificially created by the fact that there are more than twelve topics present in the curriculum, meaning that the LDA algorithm has to combine unrelated themes into one topic. This is for instance the case for `topic 3` which combines the themes of law (`law`, `legal`) and international affairs (`european`, `international`) (see first plot). Increasing the number of topics in the model should solve this issue.
 
-We also observe that the distribution of topics is very different at the course and the cluster level. While courses are usually heavily dominated by a single topics, clusters contain several major topics. Looking at the second plot, we observe that the courses `Computer Science`, `Optimization` and `Philosophy of Language` for instance are heavyly dominated by `topic 7`. The fourth plots shows that most clusters contain several topics. Interestingly, this graph shows that the same topic (`topic 10`) dominates the clusters `History`, `International Relations` and `Literature`. This indicates either that the content of the three clusters share some similarity or that `topic 10` contains several different themes.
+We also observe that the distribution of topics is very different at the course and the cluster level. While courses are usually heavily dominated by a single topics, clusters contain several major topics. Looking at the second plot, we observe that the courses `Computer Science`, `Optimization` and `Philosophy of Language` for instance are heavily dominated by `topic 7`. The fourth plots shows that most clusters contain several topics. Interestingly, this graph shows that the same topic (`topic 10`) dominates the clusters `History`, `International Relations` and `Literature`. This indicates either that the content of the three clusters share some similarity or that `topic 10` contains several different themes.
 
-So far, we have only analyzed models with unlabelled topics. In order to give more substance to our analysis, we assign labels to the topics. To accomplish this, we look at the first plot and identify the common theme(s) among the terms. Some topics are easier to label than others. `topic 6` is for instance pretty straightforward: it is dominated by the term `search` and also contain the terms `qualitative`, `read`, `interview` and `study`: `topic 6` corresponds to qualitative research skills and we therefore label it `Qual. Res.`[^10]. Labelling `topic 7` on the other hand is more trick. The best label I could find is `Engineering`. I have labelled each topic and present the results in the last three plots.
+So far, we have only analyzed models with unlabelled topics. In order to give more substance to our analysis, we assign labels to the topics. To accomplish this, we look at the first plot showing the most important terms of each topic and attempt to identify the common theme(s) among them. Some topics are easier to label than others. `topic 6` is for instance pretty straightforward: it is dominated by the term `search` and also contain the terms `qualitative`, `read`, `interview` and `study`: `topic 6` corresponds to qualitative research skills and we therefore label it `Qual. Res.`[^10]. Labelling `topic 7` on the other hand is more trick. The best label I could find is `Engineering`. I have labelled each topic and present the results in the last three plots.
 
-The labels give us a better image of the actual content of the courses and the clusters. The last plot indicate sthta most clusters cover the topics that we expect them to cover, indicating that the current division of courses in clusters is backed up by the content of the courses. As expected, the cluster `Sociology` covers the topics of `Society` and `Culture` and the cluster `Cultural Studies` covers the topics of `Arts`, `Culture` and `Qual. Res.`. Yet, I am surprised by the absence of certain topics in some clusters. For instance, the cluster `history` lacks the topics of `culture` and `society` and the topic of `research` is also barely present in `Biomedical Sciences`. The former shows the heavy focus of the `history` cluster on war and conflicts (`Foreign Policy`) and the latter reflects the absence of research projects in the classes of the biomedical cluster.
+The labels give us a better image of the actual content of the courses and the clusters. The last plot indicate thta most clusters cover the topics that we expect them to cover, indicating that the current division of courses in clusters is backed up by the content of the courses. As expected, the cluster `Sociology` covers the topics of `Society` and `Culture` and the cluster `Cultural Studies` covers the topics of `Arts`, `Culture` and `Qual. Res.`. Yet, I am surprised by the absence of certain topics in some clusters. For instance, the cluster `history` lacks the topics of `culture` and `society` and the topic of `research` is also barely present in `Biomedical Sciences`. The former shows the heavy focus of the `history` cluster on war and conflicts (`Foreign Policy`) and the latter reflects the absence of research projects in the classes of the biomedical cluster, something the college might want to investigate.
 
 ```{r function visualize_LDA, echo = FALSE, eval = FALSE}
 visualize_LDA <- function(results, per_cluster = FALSE, topic_names = NULL, k){
@@ -455,12 +455,17 @@ load("LDA.RDATA")
 
 ```{r, echo = FALSE}
 
-checkboxGroupInput("course_selected_LDA", "Courses", unique(tdm_course$`Course Title`)[1:20], unique(tdm_course$`Course Title`)[10:20])
+checkboxGroupInput("course_selected_LDA", "Courses",
+                   sort(unique(tf_idf$`Course Title`)),
+                   c(unique(tf_idf$`Course Title`)[20 : 25],
+                     "Computer Science", "Optimization", "Philosophy of Language"), inline = TRUE)
 
 radioButtons("n_topic", "Number of Topics",
-             choiceNames  = list("5", "12", "17", "25"),
-             choiceValues = list("LDA_5", "LDA_12", "LDA_17", "LDA_25"),
-             selected = "12")
+             c("5"  = "LDA_5",
+               "12" = "LDA_12",
+               "17" = "LDA_17",
+               "25" = "LDA_25"),
+             select = "LDA_12")
 
 renderPlot({
   
@@ -473,7 +478,7 @@ renderPlot({
     
     ggplot(aes(x = reorder_within(term, by = beta, within = topic), y = beta, fill = topic)) +
     geom_col(show.legend = F) +
-    facet_wrap(~ topic, scales = "free", ncol = 3) +
+    facet_wrap(~ topic, scales = "free") +
     scale_x_reordered() +
     labs(x = "Terms", y = "Beta", title = "Main Terms of each Topic") +
     coord_flip() +
@@ -494,7 +499,7 @@ renderPlot({
     
     ggplot(aes(reorder_within(facet, by = gamma, within = topic), y = gamma, fill = topic)) +
     geom_col(show.legend = F) +
-    facet_rep_wrap(~ topic, scales = "free", repeat.tick.labels = "bottom", ncol = 3) +
+    facet_rep_wrap(~ topic, scales = "free", repeat.tick.labels = "bottom") +
     scale_x_reordered() +
     coord_flip() +
     labs(x = NULL, y = "Gamma", title = "Main Courses of each Topic") +
@@ -515,7 +520,7 @@ renderPlot({
     
     ggplot(aes(reorder_within(topic, by = gamma, within = facet), y = gamma, fill = topic)) +
     geom_col(show.legend = F) +
-    facet_rep_wrap(~ facet, scales = "free", repeat.tick.labels = "bottom", ncol = 3) +
+    facet_rep_wrap(~ facet, scales = "free", repeat.tick.labels = "bottom") +
     scale_x_reordered() +
     coord_flip() +
     labs(x = NULL, y = "Gamma", title = "Main Topics of Courses") +
@@ -527,11 +532,14 @@ renderPlot({
 
 ```{r, echo = FALSE}
 
-checkboxGroupInput("cluster_selected_LDA", "Cluster", unique(d_course$Cluster[!is.na(d_course$Cluster)]), unique(d_course$Cluster[!is.na(d_course$Cluster)]))
+checkboxGroupInput("cluster_selected_LDA", "Cluster", sort(unique(d_course$Cluster[!is.na(d_course$Cluster)])), unique(d_course$Cluster[!is.na(d_course$Cluster)])[1:16])
 
-radioButtons("n_topic_cluster", "Number of Topics", selected = "12",
-             choiceNames  = list("5", "12", "17", "25"),
-             choiceValues = list("LDA_5", "LDA_12", "LDA_17", "LDA_25"))
+radioButtons("n_topic_cluster", "Number of Topics",
+             c("5"  = "LDA_5",
+               "12" = "LDA_12",
+               "17" = "LDA_17",
+               "25" = "LDA_25"),
+             select = "LDA_12")
 
 renderPlot({
   
@@ -548,7 +556,7 @@ renderPlot({
     
     ggplot(aes(reorder_within(facet, by = gamma, within = topic), y = gamma, fill = topic)) +
     geom_col(show.legend = F) +
-    facet_rep_wrap(~ topic, scales = "free", repeat.tick.labels = "bottom", ncol = 3) +
+    facet_rep_wrap(~ topic, scales = "free", repeat.tick.labels = "bottom") +
     scale_x_reordered() +
     coord_flip() +
     labs(x = NULL, y = "Gamma", title = "Main Clusters of each Topic") +
@@ -571,7 +579,7 @@ renderPlot({
     
     ggplot(aes(reorder_within(topic, by = gamma, within = facet), y = gamma, fill = topic)) +
     geom_col(show.legend = F) +
-    facet_rep_wrap(~ facet, scales = "free", repeat.tick.labels = "bottom", ncol = 3) +
+    facet_rep_wrap(~ facet, scales = "free", repeat.tick.labels = "bottom") +
     scale_x_reordered() +
     coord_flip() +
     labs(x = NULL, y = "Gamma", title = "Main Topics of Clusters") +
@@ -581,8 +589,9 @@ renderPlot({
 })
 ```
 
-#### Labelled Topics (TODO)
-```{r visualization LDA label, message =  FALSE, echo = FALSE}
+#### Labelled Topics
+
+```{r visualization LDA label, message =  FALSE, echo = FALSE, fig.height=9}
 `Topic Name` <- c("Arts", "Psycho/policy", "(Int.) Law",
                  "Development", "Culture", "Qual. Res.",
                  "Engineering", "Biology", "Society",
