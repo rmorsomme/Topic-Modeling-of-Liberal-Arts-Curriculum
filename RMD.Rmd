@@ -144,7 +144,6 @@ stem_hunspell <- function(term) {
     stem <- stems[[length(stems)]]
   }
   
-  return(stem)
 }
 
 # Dictionary 

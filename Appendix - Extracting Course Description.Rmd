@@ -29,18 +29,16 @@ d_description  <- tibble(Code            = character(0),
 course_code <- c("COR", "HUM", "SCI", "SSC", "SKI", "PRO", "UGR", "CAP")
 course_code <- paste(course_code, collapse = "|")
 
-content_to_exclude <- c("^Core Courses \\(COR\\)",
-                        "^Humanities \\(HUM\\)",
-                        "^Sciences \\(SCI\\)",
-                        "^Social Sciences \\(SSC\\)",
-                        "^Skills Trainings \\(SKI\\)",
-                        "^Skills Training \\(SKI\\)",
-                        "^Project \\(PRO\\)",
-                        "^Projects \\(PRO\\)",
-                        "^Undergraduate Research \\(UGR\\)",
-                        " UCM Undergraduate\r\nResearch",
-                        "UCM Undergraduate\r\n  Research"
-                        )
+content_to_exclude <- c(
+  "^Core Courses \\(COR\\)",
+  "^Humanities \\(HUM\\)",
+  "^Sciences \\(SCI\\)",
+  "^Social Sciences \\(SSC\\)",
+  "^Skills Trainings \\(SKI\\)", "^Skills Training \\(SKI\\)",
+  "^Project \\(PRO\\)", "^Projects \\(PRO\\)",
+  "^Undergraduate Research \\(UGR\\)",
+  " UCM Undergraduate\r\nResearch", "UCM Undergraduate\r\n  Research"
+  )
 
 content_to_exclude <- paste(content_to_exclude, collapse = "|")
 
@@ -68,11 +66,8 @@ for(n in 1 : n_catalogue){
     
     # Extract Description
     following_page <- page + 1 # for convenience
-    if(following_page %in% first_pages_description){
-      description <- cat_description[page]
-    }else{
-       description <- paste(cat_description[page : following_page], collapse = " ")
-    }
+    description <- if(following_page %in% first_pages_description) cat_description[page]
+                   else                                            paste(cat_description[page : following_page], collapse = " ")
     
     # Save Description
     Code <- substring(description, first = 1, last = 7)      
