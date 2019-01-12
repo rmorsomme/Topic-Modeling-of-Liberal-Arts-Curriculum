@@ -231,7 +231,6 @@ ui <- navbarPage(
       
     ),
     
-    
     # Panel 3B: topic modeling - cluster
     tabPanel(
       
@@ -281,6 +280,39 @@ ui <- navbarPage(
           # Output: Word cloud
           h4(textOutput(outputId = "modelingB_gamma2_title"), align = "center"),
           plotOutput(outputId = "modelingB_gamma2_plot")
+          
+        )
+        
+      )
+      
+    ),
+    
+    
+    # Panel 3C: topic modeling - label
+    tabPanel(
+      
+      # Panel title
+      title = "Labeled Topics",
+      
+      # Sidebar layout
+      sidebarLayout(
+        
+        sidebarPanel = NULL,
+        
+        # Main panel (output)
+        mainPanel = mainPanel(
+          
+          # Output: Barplot
+          h4(textOutput(outputId = "modelingC_beta_title"), align = "center"),
+          plotOutput(outputId = "modelingC_beta_plot"),
+          
+          # Output: Word cloud
+          h4(textOutput(outputId = "modelingC_gamma1_title"), align = "center"),
+          plotOutput(outputId = "modelingC_gamma1_plot"),
+          
+          # Output: Word cloud
+          h4(textOutput(outputId = "modelingC_gamma2_title"), align = "center"),
+          plotOutput(outputId = "modelingC_gamma2_plot")
           
         )
         
@@ -593,8 +625,7 @@ server <- function(input, output) {
     tidy(model, matrix = "gamma") %>%
       left_join(d_course, by = c("document" = "Code")) %>%
       mutate(topic = paste("Topic", topic)) %>%
-      filter(Cluster %in% input$modelingB_cluster,
-             gamma > 0.05) %>%
+      filter(Cluster %in% input$modelingB_cluster) %>%
       rename(facet = Cluster) %>%
       group_by(facet, topic) %>%
       summarise(gamma = sum(gamma)) %>%
@@ -625,11 +656,115 @@ server <- function(input, output) {
     tidy(model, matrix = "gamma") %>%
       left_join(d_course, by = c("document" = "Code")) %>%
       mutate(topic = paste("Topic", topic)) %>%
-      filter(`Course Title` %in% input$modelingA_course,
-             gamma > 0.05) %>%
-      rename(facet = Title_short) %>%
+      filter(Cluster %in% input$modelingB_cluster) %>%
+      rename(facet = Cluster) %>%
+      group_by(facet, topic) %>%
+        summarise(gamma = sum(gamma)) %>%
+        filter(gamma > 0.05) %>%
+      ungroup %>%
       
       ggplot(aes(reorder_within(topic, by = gamma, within = facet), y = gamma, fill = topic)) +
+      geom_col(show.legend = F) +
+      facet_wrap(~ facet, scales = "free") +
+      scale_x_reordered() +
+      coord_flip() +
+      labs(x = NULL, y = "Gamma") +
+      theme_light() +
+      theme(plot.title = element_text(hjust = 0.5))
+    
+  })
+  
+  #
+  # Modeling C: beta
+  output$modelingC_beta_title <- renderText({
+    
+    "Main Terms of each Topic"
+    
+  })
+  output$modelingC_beta_plot  <- renderPlot({
+    
+    table_topic <- tibble(`Topic Name` = c("Arts", "Psycho/policy", "(Int.) Law",
+                                                  "Development", "Culture", "Qual. Res.",
+                                                  "Engineering", "Biology", "Society",
+                                                  "Foreign Policy", "Reserach", "Skills"),
+                          topic_number = 1 : 12)
+    
+    tidy(LDA_12, matrix = "beta") %>%
+    left_join(table_topic, by = c("topic" = "topic_number")) %>%
+      group_by(`Topic Name`) %>%
+      top_n(10, beta) %>%
+      ungroup %>%
+      
+      ggplot(aes(x = reorder_within(term, by = beta, within = `Topic Name`), y = beta, fill = `Topic Name`)) +
+      geom_col(show.legend = F) +
+      facet_wrap(~ `Topic Name`, scales = "free") +
+      scale_x_reordered() +
+      labs(x = "Terms", y = "Beta distribution") +
+      coord_flip() +
+      theme_light() +
+      theme(plot.title = element_text(hjust = 0.5))
+    
+  })
+  
+  # Modeling C: gamma1
+  output$modelingC_gamma1_title <- renderText({
+    
+    "Main Clusters of each Topic"
+    
+  })
+  output$modelingC_gamma1_plot  <- renderPlot({
+    
+    table_topic <- tibble(`Topic Name` = c("Arts", "Psycho/policy", "(Int.) Law",
+                                           "Development", "Culture", "Qual. Res.",
+                                           "Engineering", "Biology", "Society",
+                                           "Foreign Policy", "Reserach", "Skills"),
+                          topic_number = 1 : 12)
+    
+    tidy(LDA_12, matrix = "gamma") %>%
+      left_join(table_topic, by = c("topic" = "topic_number")) %>%
+      left_join(d_course, by = c("document" = "Code")) %>%
+      rename(facet = Cluster) %>%
+      group_by(facet, `Topic Name`) %>%
+        summarise(gamma = sum(gamma)) %>%
+        filter(gamma > 0.05) %>%
+      ungroup %>%
+      
+      ggplot(aes(reorder_within(facet, by = gamma, within = `Topic Name`), y = gamma, fill = `Topic Name`)) +
+      geom_col(show.legend = F) +
+      facet_wrap(~ `Topic Name`, scales = "free") +
+      scale_x_reordered() +
+      coord_flip() +
+      labs(x = NULL, y = "Gamma Distribution") +
+      theme_light() +
+      theme(plot.title = element_text(hjust = 0.5))
+    
+  })
+  
+  # Modeling C: gamma2
+  output$modelingC_gamma2_title <- renderText({
+    
+    "Main Topics per Cluster"
+    
+  })
+  output$modelingC_gamma2_plot  <- renderPlot({
+    
+    table_topic <- tibble(`Topic Name` = c("Arts", "Psycho/policy", "(Int.) Law",
+                                           "Development", "Culture", "Qual. Res.",
+                                           "Engineering", "Biology", "Society",
+                                           "Foreign Policy", "Reserach", "Skills"),
+                          topic_number = 1 : 12)
+    
+    tidy(LDA_12, matrix = "gamma") %>%
+      left_join(table_topic, by = c("topic" = "topic_number")) %>%
+      left_join(d_course, by = c("document" = "Code")) %>%
+      rename(facet = Cluster) %>%
+      group_by(facet, `Topic Name`) %>%
+        summarise(gamma = sum(gamma)) %>%
+        filter(gamma > 0.05,
+               ! is.na(facet)) %>%
+      ungroup %>%
+      
+      ggplot(aes(reorder_within(`Topic Name`, by = gamma, within = facet), y = gamma, fill = `Topic Name`)) +
       geom_col(show.legend = F) +
       facet_wrap(~ facet, scales = "free") +
       scale_x_reordered() +
