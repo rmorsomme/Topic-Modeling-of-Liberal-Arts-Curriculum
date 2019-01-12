@@ -182,28 +182,11 @@ save(d_description, d_description_tidy, d_description_stem, file = "data_prep.RD
 ```
 
 # Analysis
-```{r function reorder_within & co., echo = FALSE}
-# Functions for ordering bars within facet in ggplot.
-# From: https://github.com/dgrtwo/drlib/blob/master/R/reorder_within.R
-reorder_within <- function(x, by, within, fun = mean, sep = "___", ...) {
-  new_x <- paste(x, within, sep = sep)
-  stats::reorder(new_x, by, FUN = fun)
-}
 
-scale_x_reordered <- function(..., sep = "___") {
-  reg <- paste0(sep, ".+$")
-  ggplot2::scale_x_discrete(labels = function(x) gsub(reg, "", x), ...)
-}
-
-scale_y_reordered <- function(..., sep = "___") {
-  reg <- paste0(sep, ".+$")
-  ggplot2::scale_y_discrete(labels = function(x) gsub(reg, "", x), ...)
-}
-```
 ## Overview
 We conduct three analyses. First, we identify the most important terms of each course and cluster with the tf-idf. Next, compare the curriculum across years to identify which themes have emerged and declined. Finally, we use the LDA algorithm (a popular technique for topic modeling) to build a topic model of the 2018-2019 curriculum, both at the course- and cluster-level.
 
-## TF-IDF
+## Most Important Terms
 The tf-idf is a popular measure to identify the most important terms of documents that belong to a corpus. By penalizing terms that occur in many documents, tf-idf allows us to focus on the terms that are specific to each document. In our case, terms such as "learn" or "student", which appear in a large number of course descriptions and are therefore not informative, have a low tf-idf. This way, we can identify the most *distinctive* terms of each course/cluster and get a feel of the topics they cover.
 
 We use the function `bind_tf_idf()` to obtain the tf-idf of each term for the year 2018-2019. We then identify the most important terms of each cluster and course[^9] and display them both as barplots and word clouds. In the latter, the size and the color of a term indicates its tf-idf.
@@ -225,195 +208,17 @@ tf_idf_cluster <- tf_idf %>%
   ungroup
 ```
 
-```{r}
-save(tf_idf, tf_idf_cluster, file = "results_tf_idf.RDATA")
-```
-
 ### Results
 The tf-idf does a pretty good job at identifying the most important terms of the courses/clusters. If the names of the courses/clusters were absent from the plots, it would be fairly easy to guess them from the terms. We also observe interesting elements concerning the content of the clusters. For instance, while the cluster `History` gives a central place to the European continent (with terms like Europe, european), the cluster `International Relations` focuses more on China (chinese).
 
-```{r tf-idf visualization course, echo = FALSE, message = FALSE, warning = FALSE}
-
-checkboxGroupInput("course_selected", "Courses", sort(unique(tf_idf$`Course Title`)), unique(tf_idf$`Course Title`)[10 : 15], inline = TRUE)
-
-renderPlot({
-  
-  tf_idf %>%
-  filter(`Course Title` %in% input$course_selected, 
-         n >= 2) %>%
-  group_by(Code) %>%
-  top_n(9, tf_idf) %>%
-    
-  ggplot(aes(reorder_within(word, tf_idf, Code), tf_idf)) +
-  geom_col(show.legend = FALSE) +
-  labs(title = "Distinctive Terms of Courses", x = NULL, y = "tf-idf") +
-  scale_x_reordered() +
-  facet_wrap(~ Title_short, scales = "free") +
-  coord_flip() +
-  theme_light() +
-  theme(plot.title = element_text(hjust = 0.5))
-  
-})
-renderPlot({
-  
-  tf_idf %>%
-    filter(`Course Title` %in% input$course_selected, 
-           n >= 2) %>%
-    group_by(Code) %>%
-    top_n(9, tf_idf) %>%
-    mutate(tf_idf_norm = tf_idf / sum(tf_idf), # normalization for better results in wordcloud
-           angle = 10 * sample(-2:2, n(), replace = TRUE, prob = c(1,1,4,1,1))) %>%
-    
-    ggplot(aes(size = order(tf_idf_norm^0.7, tf_idf_norm), label = word,
-               angle = angle, color = tf_idf_norm^0.7)) +
-    geom_text_wordcloud_area(area_corr_power = 1,
-                             eccentricity    = 1,
-                             rm_outside      = T) +
-    scale_radius(range = c(3, 7), limits = c(0, NA)) +
-    scale_color_gradient(low = "red", high = "blue") +
-    facet_wrap(~ `Course Title`) +
-    labs(title = "Distinctive Terms of Courses") +
-    theme(panel.background = element_rect(fill = "white"),
-          plot.title = element_text(hjust = 0.5))
-  
-})
-```
-
-```{r tf-idf visual cluster, echo = FALSE, message = FALSE, warning = FALSE}
-
-checkboxGroupInput("cluster_selected", "Cluster", sort(unique(d_course$Cluster[!is.na(d_course$Cluster)])), unique(d_course$Cluster)[1 : 6], inline = TRUE)
-
-renderPlot({
-  
-  tf_idf_cluster %>%
-    filter(n >= 5,
-           Cluster %in% input$cluster_selected) %>%
-    group_by(Cluster) %>%
-    top_n(9, tf_idf) %>%
-    mutate(tf_idf_norm = tf_idf / sum(tf_idf), 
-           angle = 10 * sample(-2:2, n(), replace = T, prob = c(1,1,4,1,1))) %>%
-      
-    ggplot(aes(reorder_within(word, tf_idf, Cluster), tf_idf)) +
-    geom_col(show.legend = FALSE) +
-    labs(title = "Distinctive Terms of Clusters", x = NULL, y = "tf-idf") +
-    scale_x_reordered() +
-    facet_wrap(~ Cluster, scales = "free") +
-    coord_flip() +
-    theme_light() +
-    theme(strip.text.x = element_text(),
-          plot.title = element_text(hjust = 0.5))
-  
-})
-renderPlot({
-  
-  tf_idf_cluster %>%
-    filter(n >= 5,
-           Cluster %in% input$cluster_selected) %>%
-    group_by(Cluster) %>%
-    top_n(9, tf_idf) %>%
-    mutate(tf_idf_norm = tf_idf / sum(tf_idf), 
-           angle = 10 * sample(-2:2, n(), replace = T, prob = c(1,1,4,1,1))) %>%
-      
-    ggplot(aes(size = order(tf_idf_norm^0.7, tf_idf_norm), label = word, angle = angle, color = tf_idf_norm^0.7)) +
-    geom_text_wordcloud_area(area_corr_power = 1,
-                             eccentricity    = 1,
-                             rm_outside      = T) +
-    scale_radius(range = c(3, 6), limits = c(0, NA)) +
-    scale_color_gradient(low = "red", high = "blue") +
-    facet_wrap(~ Cluster) +
-    labs(title = "Distinctive Terms of Clusters") +
-    theme(strip.text.x     = element_text(),
-          panel.background = element_rect(fill = "white"),
-          plot.title = element_text(hjust = 0.5))
-  
-})
-```
-
-## Topic Emergence
+## Term Emergence
 We compare the content of the curriculum across years to identify terms and themes that have declined and emerged. To accomplish this, we compare the frequency of the terms in the two catalogues by taking their `log ratio`. A positive value indicates that the term has become more frequent and a negative value indicates a decline in the use of the term. We plot the forty terms with the highest absolute `log ratio`. Again, we display the information both as a barplot and wordcloud.
-
-
-```{r}
-d_emergence <- d_description_stem %>%
-    filter(`Calendar Year` %in% c(input$year_old, input$year_recent)) %>%
-    count(`Calendar Year`, `word`) %>%
-    spread(key = `Calendar Year`, value = n, fill = 0) %>%
-    rename(old = input$year_old, new = input$year_recent) %>%
-    mutate(n         = old + new,
-           log_ratio = log( ((new+1) / (sum(new)+1)) /
-                            ((old+1) / (sum(old)+1)) ),
-           Trend     = case_when(log_ratio<0 ~ "Declining",
-                                 log_ratio>0 ~ "Emerging"))
-```
-
-```{r}
-save(d_emergence, "results_emergence.RDATA")
-```
-
 
 ### Results
 
 Let us compare the years `2014-2015` (oldest available) and `2018-2019` (most recent). From the two plots, we can observe that topics that have made the news these last few years such as religion, migrationa and climate have become more important in the catalogues. This shows that the college has done a good job at adapting its curriculum to the development of the world's affairs. We also observe that the themes of sexuality (with terms like `sex`, `sexual` and `sexuality`) and terrorism (`terrorism`, `crime`) have declined. It is interesting to note that the terms `globalization`, `poverty` and `sustainability` have become less important. As for the term `portal`, its "emergence" is due to the introduction of a new online student *portal* system at the college. The terms is not mentioned once in 2014-2015 and appears `19` times in 2018-2019. This shows that human interpretation and a good knowledge of the data is crucial in such analysis to avoid false alarms.
 
-```{r emergence visual, echo = FALSE, message = FALSE}
-
-radioButtons("year_old", "Year (old)", c("2014-2015", "2015-2016", "2017-2018", "2018-2019"), "2014-2015")
-
-radioButtons("year_recent", "Year (recent)", c("2014-2015", "2015-2016", "2017-2018", "2018-2019"), "2018-2019")
-
-renderPlot({
-  
-  d_description_stem %>%
-    filter(`Calendar Year` %in% c(input$year_old, input$year_recent)) %>%
-    count(`Calendar Year`, `word`) %>%
-    spread(key = `Calendar Year`, value = n, fill = 0) %>%
-    rename(old = input$year_old, new = input$year_recent) %>%
-    mutate(n         = old + new,
-           log_ratio = log( ((new+1) / (sum(new)+1)) /
-                            ((old+1) / (sum(old)+1)) ),
-           Trend     = case_when(log_ratio<0 ~ "Declining",
-                                 log_ratio>0 ~ "Emerging")) %>%
-    filter(n > 15) %>%
-    top_n(50, abs(log_ratio)) %>%
-    
-    ggplot(aes(reorder(word, log_ratio), log_ratio, fill = Trend)) +
-    geom_col() +
-    coord_flip() +
-    labs(x = NULL, title = paste("Emerging and Declining Terms Between", input$year_old, "and", input$year_recent), x = "Log Ratio") +
-    theme_light() +
-    theme(plot.title = element_text(hjust = 0.5))
-
-  })
-
-renderPlot({
-  
-  d_description_stem %>%
-    filter(`Calendar Year` %in% c(input$year_old, input$year_recent)) %>%
-    count(`Calendar Year`, `word`) %>%
-    spread(key = `Calendar Year`, value = n, fill = 0) %>%
-    rename(old = input$year_old, new = input$year_recent) %>%
-    mutate(n         = old + new,
-           log_ratio = log( ((new+1) / (sum(new)+1)) /
-                            ((old+1) / (sum(old)+1)) ),
-           Trend     = case_when(log_ratio<0 ~ "Declining",
-                                 log_ratio>0 ~ "Emerging")) %>%
-    filter(n > 15) %>%
-    top_n(50, abs(log_ratio)) %>%
-  mutate(angle = 10 * sample(-2:2, n(), replace = T, prob = c(1,1,4,1,1))) %>%
-    
-  ggplot(aes(size = abs(log_ratio), label = word, angle = angle, color = Trend, angle_group = log_ratio < 0)) +
-  geom_text_wordcloud_area(area_corr_power = 1,
-                           eccentricity    = 1,
-                           rm_outside      = T) +
-  labs(title = paste("Emerging (blue) and Declining (red) Terms Between", input$year_old, "and", input$year_recent)) +
-  scale_radius(range = c(3, 14), limits = c(0, NA)) +
-  theme(panel.background = element_rect(fill = "white"),
-        plot.title = element_text(hjust = 0.5))
-
-  })
-```
-
-## LDA
+## Topic Modeling
 Finally, we use the Latent Dirichlet Allocation (LDA) algorithm to conduct a topic analysis of the college's curriculum at the course- and the cluster-level. Given a corpus of documents and a predetermined number of topics, the LDA algorithm outputs a topic model which gives the importance of each term to the topics (beta distribution) and the importance of each topic to the documents (gamma distribution). In other words, the LDA finds the mixture of words associated with each topic and the mixture of topics associated with each document. The advantage of the LDA over regular clustering methods is that is allows for overlap of terms across topics and of topics across documents, thereby offering a model that is closer to natural language.
 
 ### Fitting Model
@@ -435,11 +240,6 @@ LDA_17 <- LDA(d_cast, k = 17, control = list(seed = 123)) # There are 17 cluster
 LDA_25 <- LDA(d_cast, k = 25, control = list(seed = 123))
 ```
 
-```{r, echo = FALSE, eval = FALSE}
-save(LDA_5, LDA_12, LDA_17, LDA_25,
-     file = "Results_LDA.RDATA")
-```
-
 ### Results
 We present the output of a topic model with three plots which respectively show (i) the most important terms for each topic (ii) the main courses/clusters of each topic and (iii) the most important topics of each course/cluster. For each model, we present the results at the course- an the cluster-level. The LDA is an unsupervised algorithm, meaning that the topic are unlabeled. In the final section, I label the topic manually.
 
@@ -451,142 +251,15 @@ So far, we have only analyzed models with unlabelled topics. In order to give mo
 
 The labels give us a better image of the actual content of the courses and the clusters. The last plot indicate thta most clusters cover the topics that we expect them to cover, indicating that the current division of courses in clusters is backed up by the content of the courses. As expected, the cluster `Sociology` covers the topics of `Society` and `Culture` and the cluster `Cultural Studies` covers the topics of `Arts`, `Culture` and `Qual. Res.`. Yet, I am surprised by the absence of certain topics in some clusters. For instance, the cluster `history` lacks the topics of `culture` and `society` and the topic of `research` is also barely present in `Biomedical Sciences`. The former shows the heavy focus of the `history` cluster on war and conflicts (`Foreign Policy`) and the latter reflects the absence of research projects in the classes of the biomedical cluster, something the college might want to investigate.
 
-```{r function visualize_LDA, echo = FALSE, eval = FALSE}
-visualize_LDA <- function(results, per_cluster = FALSE, topic_names = NULL, k){
-  
-  # Setup
-  tibble(topic_letter = topic_names,
-         topic_number = 1 : length(topic_names))
-
-
-  if(!per_cluster){  }else{
-    doc_topic <- doc_topic %>%
-      filter(Cluster %in% input$cluster_selected_LDA) %>%
-      rename(facet = Cluster) %>%
-      group_by(facet, topic) %>%
-      summarise(gamma = sum(gamma)) %>%
-      ungroup
-
-}
-```
-
 #### Unlabelled Topics
 
-```{r, echo = FALSE}
-load("LDA.RDATA")
-```
+
 
 ```{r, echo = FALSE}
 
-checkboxGroupInput("course_selected_LDA", "Courses",
-                   sort(unique(tf_idf$`Course Title`)),
-                   c(unique(tf_idf$`Course Title`)[20 : 25],
-                     "Computer Science", "Optimization", "Philosophy of Language"), inline = TRUE)
 
-radioButtons("n_topic", "Number of Topics",
-             c("5"  = "LDA_5",
-               "12" = "LDA_12",
-               "17" = "LDA_17",
-               "25" = "LDA_25"),
-             select = "LDA_12")
 
-renderPlot({
-  
-  model   <- get(input$n_topic)
-  
-  tidy(model, matrix = "beta") %>%
-    mutate(topic = paste("Topic", topic)) %>%
-    group_by(topic) %>%
-    top_n(10, beta) %>%
-    
-    ggplot(aes(x = reorder_within(term, by = beta, within = topic), y = beta, fill = topic)) +
-    geom_col(show.legend = F) +
-    facet_wrap(~ topic, scales = "free") +
-    scale_x_reordered() +
-    labs(x = "Terms", y = "Beta", title = "Main Terms of each Topic") +
-    coord_flip() +
-    theme_light() +
-    theme(plot.title = element_text(hjust = 0.5))
-  
-})
-renderPlot({
-  
-  model   <- get(input$n_topic)
 
-  tidy(model, matrix = "gamma") %>%
-    left_join(d_course, by = c("document" = "Code")) %>%
-    mutate(topic = paste("Topic", topic)) %>%
-    filter(`Course Title` %in% input$course_selected_LDA,
-           gamma > 0.05) %>%
-    rename(facet = Title_short) %>%
-    
-    ggplot(aes(reorder_within(facet, by = gamma, within = topic), y = gamma, fill = topic)) +
-    geom_col(show.legend = F) +
-    facet_rep_wrap(~ topic, scales = "free", repeat.tick.labels = "bottom") +
-    scale_x_reordered() +
-    coord_flip() +
-    labs(x = NULL, y = "Gamma", title = "Main Courses of each Topic") +
-    theme_light() +
-    theme(plot.title = element_text(hjust = 0.5))
-  
-})
-renderPlot({
-  
-  model   <- get(input$n_topic)
-
-  tidy(model, matrix = "gamma") %>%
-    left_join(d_course, by = c("document" = "Code")) %>%
-    mutate(topic = paste("Topic", topic)) %>%
-    filter(`Course Title` %in% input$course_selected_LDA,
-           gamma > 0.05) %>%
-    rename(facet = Title_short) %>%
-    
-    ggplot(aes(reorder_within(topic, by = gamma, within = facet), y = gamma, fill = topic)) +
-    geom_col(show.legend = F) +
-    facet_rep_wrap(~ facet, scales = "free", repeat.tick.labels = "bottom") +
-    scale_x_reordered() +
-    coord_flip() +
-    labs(x = NULL, y = "Gamma", title = "Main Topics of Courses") +
-    theme_light() +
-    theme(plot.title = element_text(hjust = 0.5))
-  
-})
-```
-
-```{r, echo = FALSE}
-
-checkboxGroupInput("cluster_selected_LDA", "Cluster", sort(unique(d_course$Cluster[!is.na(d_course$Cluster)])), unique(d_course$Cluster[!is.na(d_course$Cluster)])[1:16])
-
-radioButtons("n_topic_cluster", "Number of Topics",
-             c("5"  = "LDA_5",
-               "12" = "LDA_12",
-               "17" = "LDA_17",
-               "25" = "LDA_25"),
-             select = "LDA_12")
-
-renderPlot({
-  
-  model   <- get(input$n_topic_cluster)
-
-  tidy(model, matrix = "gamma") %>%
-    left_join(d_course, by = c("document" = "Code")) %>%
-    mutate(topic = paste("Topic", topic)) %>%
-    filter(Cluster %in% input$cluster_selected_LDA) %>%
-    rename(facet = Cluster) %>%
-    group_by(facet, topic) %>%
-    summarise(gamma = sum(gamma)) %>%
-    filter(gamma > 0.05) %>%
-    
-    ggplot(aes(reorder_within(facet, by = gamma, within = topic), y = gamma, fill = topic)) +
-    geom_col(show.legend = F) +
-    facet_rep_wrap(~ topic, scales = "free", repeat.tick.labels = "bottom") +
-    scale_x_reordered() +
-    coord_flip() +
-    labs(x = NULL, y = "Gamma", title = "Main Clusters of each Topic") +
-    theme_light() +
-    theme(plot.title = element_text(hjust = 0.5))
-  
-})
 renderPlot({
   
   model   <- get(input$n_topic_cluster)
@@ -688,3 +361,23 @@ tidy(LDA_12, matrix = "gamma") %>%
 [^9]: We only plot a selection of twelve courses to keep the plots readable.
 
 [^11]: It also includes a variable with a shorter course title (`Title_short`) which we use use in the plots for a better readability.
+
+
+
+```{r}
+save(
+  
+  # TF-IDF
+  tf_idf, tf_idf_cluster,
+  
+  # Topic emergence
+  d_description_stem,
+  
+  # Topic nodeling
+  d_course, LDA_5, LDA_12, LDA_17, LDA_25,
+  
+  # File name
+  file = "results_data.RDATA"
+  )
+
+```
