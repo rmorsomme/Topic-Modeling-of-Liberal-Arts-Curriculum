@@ -225,6 +225,10 @@ tf_idf_cluster <- tf_idf %>%
   ungroup
 ```
 
+```{r}
+save(tf_idf, tf_idf_cluster, file = "results_tf_idf.RDATA")
+```
+
 ### Results
 The tf-idf does a pretty good job at identifying the most important terms of the courses/clusters. If the names of the courses/clusters were absent from the plots, it would be fairly easy to guess them from the terms. We also observe interesting elements concerning the content of the clusters. For instance, while the cluster `History` gives a central place to the European continent (with terms like Europe, european), the cluster `International Relations` focuses more on China (chinese).
 
@@ -328,6 +332,25 @@ renderPlot({
 ## Topic Emergence
 We compare the content of the curriculum across years to identify terms and themes that have declined and emerged. To accomplish this, we compare the frequency of the terms in the two catalogues by taking their `log ratio`. A positive value indicates that the term has become more frequent and a negative value indicates a decline in the use of the term. We plot the forty terms with the highest absolute `log ratio`. Again, we display the information both as a barplot and wordcloud.
 
+
+```{r}
+d_emergence <- d_description_stem %>%
+    filter(`Calendar Year` %in% c(input$year_old, input$year_recent)) %>%
+    count(`Calendar Year`, `word`) %>%
+    spread(key = `Calendar Year`, value = n, fill = 0) %>%
+    rename(old = input$year_old, new = input$year_recent) %>%
+    mutate(n         = old + new,
+           log_ratio = log( ((new+1) / (sum(new)+1)) /
+                            ((old+1) / (sum(old)+1)) ),
+           Trend     = case_when(log_ratio<0 ~ "Declining",
+                                 log_ratio>0 ~ "Emerging"))
+```
+
+```{r}
+save(d_emergence, "results_emergence.RDATA")
+```
+
+
 ### Results
 
 Let us compare the years `2014-2015` (oldest available) and `2018-2019` (most recent). From the two plots, we can observe that topics that have made the news these last few years such as religion, migrationa and climate have become more important in the catalogues. This shows that the college has done a good job at adapting its curriculum to the development of the world's affairs. We also observe that the themes of sexuality (with terms like `sex`, `sexual` and `sexuality`) and terrorism (`terrorism`, `crime`) have declined. It is interesting to note that the terms `globalization`, `poverty` and `sustainability` have become less important. As for the term `portal`, its "emergence" is due to the introduction of a new online student *portal* system at the college. The terms is not mentioned once in 2014-2015 and appears `19` times in 2018-2019. This shows that human interpretation and a good knowledge of the data is crucial in such analysis to avoid false alarms.
@@ -414,7 +437,7 @@ LDA_25 <- LDA(d_cast, k = 25, control = list(seed = 123))
 
 ```{r, echo = FALSE, eval = FALSE}
 save(LDA_5, LDA_12, LDA_17, LDA_25,
-     file = "LDA.RDATA")
+     file = "Results_LDA.RDATA")
 ```
 
 ### Results
