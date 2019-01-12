@@ -2,4 +2,4 @@
 library(shiny)
 library(rsconnect)
 #runApp()
-deployApp("Shiny App")
+deployApp("Shiny App - Topic Modeling")

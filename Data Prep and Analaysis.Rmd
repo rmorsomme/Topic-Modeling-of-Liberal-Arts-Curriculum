@@ -241,6 +241,15 @@ So far, we have only analyzed models with unlabelled topics. In order to give mo
 The labels give us a better image of the actual content of the courses and the clusters. The last plot indicate thta most clusters cover the topics that we expect them to cover, indicating that the current division of courses in clusters is backed up by the content of the courses. As expected, the cluster `Sociology` covers the topics of `Society` and `Culture` and the cluster `Cultural Studies` covers the topics of `Arts`, `Culture` and `Qual. Res.`. Yet, I am surprised by the absence of certain topics in some clusters. For instance, the cluster `history` lacks the topics of `culture` and `society` and the topic of `research` is also barely present in `Biomedical Sciences`. The former shows the heavy focus of the `history` cluster on war and conflicts (`Foreign Policy`) and the latter reflects the absence of research projects in the classes of the biomedical cluster, something the college might want to investigate.
 
 ```{r, eval = FALSE, echo = FALSE}
+LDA_5 = list(beta = tidy(LDA_5, matrix = "beta"),
+             gamma = tidy(LDA_5, matrix = "gamma"))
+LDA_12 = list(beta = tidy(LDA_12, matrix = "beta"),
+             gamma = tidy(LDA_12, matrix = "gamma"))
+LDA_17 = list(beta = tidy(LDA_17, matrix = "beta"),
+             gamma = tidy(LDA_17, matrix = "gamma"))
+LDA_25 = list(beta = tidy(LDA_25, matrix = "beta"),
+             gamma = tidy(LDA_25, matrix = "gamma"))
+
 save(
   
   # TF-IDF
@@ -253,7 +262,7 @@ save(
   d_course, LDA_5, LDA_12, LDA_17, LDA_25,
   
   # File name
-  file = "Shiny App/results_data.RDATA"
+  file = "Shiny App - Topic Modeling/results_data.RDATA"
   )
 
 ```

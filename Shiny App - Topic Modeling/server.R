@@ -209,9 +209,7 @@ function(input, output) {
   })
   output$modelingA_beta_plot  <- renderPlot({
     
-    model <- get(input$modelingA_ntopic)
-    
-    tidy(model, matrix = "beta") %>%
+    get(input$modelingA_ntopic)$beta %>%
       mutate(topic = paste("Topic", topic)) %>%
       group_by(topic) %>%
       top_n(10, beta) %>%
@@ -236,9 +234,7 @@ function(input, output) {
   })
   output$modelingA_gamma1_plot  <- renderPlot({
     
-    model   <- get(input$modelingA_ntopic)
-    
-    tidy(model, matrix = "gamma") %>%
+    get(input$modelingA_ntopic)$gamma %>%
       left_join(d_course, by = c("document" = "Code")) %>%
       mutate(topic = paste("Topic", topic)) %>%
       filter(`Course Title` %in% input$modelingA_course,
@@ -264,9 +260,7 @@ function(input, output) {
   })
   output$modelingA_gamma2_plot  <- renderPlot({
     
-    model   <- get(input$modelingA_ntopic)
-    
-    tidy(model, matrix = "gamma") %>%
+    get(input$modelingA_ntopic)$gamma %>%
       left_join(d_course, by = c("document" = "Code")) %>%
       mutate(topic = paste("Topic", topic)) %>%
       filter(`Course Title` %in% input$modelingA_course,
@@ -293,9 +287,7 @@ function(input, output) {
   })
   output$modelingB_beta_plot  <- renderPlot({
     
-    model <- get(input$modelingB_ntopic)
-    
-    tidy(model, matrix = "beta") %>%
+    get(input$modelingB_ntopic)$beta %>%
       mutate(topic = paste("Topic", topic)) %>%
       group_by(topic) %>%
       top_n(10, beta) %>%
@@ -320,9 +312,7 @@ function(input, output) {
   })
   output$modelingB_gamma1_plot  <- renderPlot({
     
-    model   <- get(input$modelingB_ntopic)
-    
-    tidy(model, matrix = "gamma") %>%
+    get(input$modelingB_ntopic)$gamma %>%
       left_join(d_course, by = c("document" = "Code")) %>%
       mutate(topic = paste("Topic", topic)) %>%
       filter(Cluster %in% input$modelingB_cluster) %>%
@@ -351,9 +341,7 @@ function(input, output) {
   })
   output$modelingB_gamma2_plot  <- renderPlot({
     
-    model   <- get(input$modelingA_ntopic)
-    
-    tidy(model, matrix = "gamma") %>%
+    get(input$modelingA_ntopic)$gamma %>%
       left_join(d_course, by = c("document" = "Code")) %>%
       mutate(topic = paste("Topic", topic)) %>%
       filter(Cluster %in% input$modelingB_cluster) %>%
@@ -389,7 +377,7 @@ function(input, output) {
                                            "Foreign Policy", "Reserach", "Skills"),
                           topic_number = 1 : 12)
     
-    tidy(LDA_12, matrix = "beta") %>%
+    LDA_12$beta %>%
       left_join(table_topic, by = c("topic" = "topic_number")) %>%
       group_by(`Topic Name`) %>%
       top_n(10, beta) %>%
@@ -420,7 +408,7 @@ function(input, output) {
                                            "Foreign Policy", "Reserach", "Skills"),
                           topic_number = 1 : 12)
     
-    tidy(LDA_12, matrix = "gamma") %>%
+    LDA_12$gamma %>%
       left_join(table_topic, by = c("topic" = "topic_number")) %>%
       left_join(d_course, by = c("document" = "Code")) %>%
       rename(facet = Cluster) %>%
@@ -454,7 +442,7 @@ function(input, output) {
                                            "Foreign Policy", "Reserach", "Skills"),
                           topic_number = 1 : 12)
     
-    tidy(LDA_12, matrix = "gamma") %>%
+    LDA_12$gamma %>%
       left_join(table_topic, by = c("topic" = "topic_number")) %>%
       left_join(d_course, by = c("document" = "Code")) %>%
       rename(facet = Cluster) %>%
