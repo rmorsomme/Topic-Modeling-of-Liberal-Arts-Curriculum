@@ -1,7 +1,7 @@
 Appendix - Extracting Course Description
 ================
 Raphaël Morsomme
-2019-01-09
+2019-01-12
 
 We extract the description of each course from the course catalogues. In the `Setup`, we create several objects that we use in the following two loops. We first loop (`Loop 1`) through each course catalogue present in `corpus`. In the loop, we first identify the section of the catalogue containing the course descriptions and assign it to `cat_description`. We then exclude from `cat_descriptions` the headers, appendix, etc, so that it only contains course descriptions. We take advantage of the fact that the the first line of a course description always starts with the code of the course, meaning that the first three characters of the first page of a description are one of the following COR, HUM, SCI, SSC, SKI, PRO, UGR, CAP. Using `grep()`, we can therefore easily identify the first page of each description which we assign to `first_pages_description`.
 
@@ -25,18 +25,16 @@ d_description  <- tibble(Code            = character(0),
 course_code <- c("COR", "HUM", "SCI", "SSC", "SKI", "PRO", "UGR", "CAP")
 course_code <- paste(course_code, collapse = "|")
 
-content_to_exclude <- c("^Core Courses \\(COR\\)",
-                        "^Humanities \\(HUM\\)",
-                        "^Sciences \\(SCI\\)",
-                        "^Social Sciences \\(SSC\\)",
-                        "^Skills Trainings \\(SKI\\)",
-                        "^Skills Training \\(SKI\\)",
-                        "^Project \\(PRO\\)",
-                        "^Projects \\(PRO\\)",
-                        "^Undergraduate Research \\(UGR\\)",
-                        " UCM Undergraduate\r\nResearch",
-                        "UCM Undergraduate\r\n  Research"
-                        )
+content_to_exclude <- c(
+  "^Core Courses \\(COR\\)",
+  "^Humanities \\(HUM\\)",
+  "^Sciences \\(SCI\\)",
+  "^Social Sciences \\(SSC\\)",
+  "^Skills Trainings \\(SKI\\)", "^Skills Training \\(SKI\\)",
+  "^Project \\(PRO\\)", "^Projects \\(PRO\\)",
+  "^Undergraduate Research \\(UGR\\)",
+  " UCM Undergraduate\r\nResearch", "UCM Undergraduate\r\n  Research"
+  )
 
 content_to_exclude <- paste(content_to_exclude, collapse = "|")
 
@@ -64,11 +62,8 @@ for(n in 1 : n_catalogue){
     
     # Extract Description
     following_page <- page + 1 # for convenience
-    if(following_page %in% first_pages_description){
-      description <- cat_description[page]
-    }else{
-       description <- paste(cat_description[page : following_page], collapse = " ")
-    }
+    description <- if(following_page %in% first_pages_description) cat_description[page]
+                   else                                            paste(cat_description[page : following_page], collapse = " ")
     
     # Save Description
     Code <- substring(description, first = 1, last = 7)      

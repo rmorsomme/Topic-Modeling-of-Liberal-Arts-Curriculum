@@ -24,10 +24,8 @@ Raphaël Morsomme
 library(tidyverse)
 library(tidytext)
 
-library(ggwordcloud) # Word Clouds
 library(hunspell)    # Stemmer
 library(topicmodels) # Latent Dirichlet Allocation algorithm
-library(lemon)       # fine tune ggplot
 library(tm)          # Corpus()
 ```
 
@@ -36,7 +34,7 @@ Introduction
 
 University departments often have little knowledge of the actual content of their study programs. Yet, having a good understanding of what each course of a program covers is paramount to maintain and education of quality.
 
-In this script, I conduct a topic modeling exercise on the curriculum offered by the University College Maastricht (UCM), Maastricht University, the Netherlands. UCM offers a bachelor in Liberal Arts and Science. Its curriculum contains over two hundred courses on virtually every topic conceivable[1], making it a great subject for a topic modeling exercise.
+In this script, I conduct a topic modeling exercise on the curriculum offered by the University College Maastricht (UCM), Maastricht University, the Netherlands. UCM offers a bachelor in Liberal Arts and Science. Its curriculum contains over two hundred courses on virtually every topic conceivable - ranging from Ranging from artificial intelligence to Shakespeare and terrorism - making it a great subject for a topic modeling exercise.
 
 The analysis is exploratory in nature: instead of answering a specific research question, I explore the data to obtain a better understanding of the content of UCM's curriculum. To accomplish this, I conduct three analyses. First, I use the tf-idf to identify the most distcinctive terms of each course. Second, I compare the curriculum across years to identify which themes have emerged and declined. Finally, I use the Latent Dirichlet Allocation algorithm to create a topic model of the 2018-2019 curriculum, both at the course- and at the cluster-level. The textual data are the course descriptions present in the course catalogues.
 
@@ -51,7 +49,7 @@ We starting by importing the course catalogues and a data set containing informa
 Importing
 ---------
 
-We import two datasets from the directory. `d_course` is a tiblle indicating the code, name and cluster[2] of each course[3]. `corpus` is a corpus containing the five most recent course catalogues of UCM. Course catalogues are published every year and contain a descritpion of each course that is one or two pages long.
+We import two datasets from the directory. `d_course` is a tiblle indicating the code, name and cluster of each course. (Courses are distributed among 17 clusters: International Relation, Cultural Studies, Biomedical Science, etc.). `corpus` is a corpus containing the five most recent course catalogues of UCM. Course catalogues are published every year and contain a descritpion of each course that is one or two pages long.
 
 ``` r
 d_course <- read_csv("Course.csv", col_type = cols())
@@ -136,7 +134,6 @@ stem_hunspell <- function(term) {
     stem <- stems[[length(stems)]]
   }
   
-  return(stem)
 }
 
 # Dictionary 
@@ -187,7 +184,7 @@ Most Important Terms
 
 The tf-idf is a popular measure to identify the most important terms of documents that belong to a corpus. By penalizing terms that occur in many documents, tf-idf allows us to focus on the terms that are specific to each document. In our case, terms such as "learn" or "student", which appear in a large number of course descriptions and are therefore not informative, have a low tf-idf. This way, we can identify the most *distinctive* terms of each course/cluster and get a feel of the topics they cover.
 
-We use the function `bind_tf_idf()` to obtain the tf-idf of each term for the year 2018-2019. We then identify the most important terms of each cluster and course[4] and display them both as barplots and word clouds. In the latter, the size and the color of a term indicates its tf-idf.
+We use the function `bind_tf_idf()` to obtain the tf-idf of each term for the year 2018-2019. We then identify the most important terms of each cluster and course\[^9\] and display them both as barplots and word clouds. In the latter, the size and the color of a term indicates its tf-idf.
 
 ``` r
 tf_idf <- d_description_stem %>%
@@ -265,22 +262,10 @@ LDA_25 <- LDA(d_cast, k = 25, control = list(seed = 123))
 
 We present the output of a topic model with three plots which respectively show (i) the most important terms for each topic (ii) the main courses/clusters of each topic and (iii) the most important topics of each course/cluster. For each model, we present the results at the course- an the cluster-level. The LDA is an unsupervised algorithm, meaning that the topic are unlabeled. In the final section, I label the topic manually.
 
-Let us set the number of topics to `12` and observe the plots at the cluster level. Most topics are covered by several clusters. Fot instance, `topic 10` is covered in several clusters of the humanities (`History`, `Literature` and `Philosophy`) and social sciences (`International Relations`, `International Law` and `Economics`). For a liberal arts program this is a desirable outcome since it encourages students interested in a particular topic to take classes in different clusters, thereby broading their acadmeic horizon[5]. At the same time, this pattern may be artificially created by the fact that there are more than twelve topics present in the curriculum, meaning that the LDA algorithm has to combine unrelated themes into one topic. This is for instance the case for `topic 3` which combines the themes of law (`law`, `legal`) and international affairs (`european`, `international`) (see first plot). Increasing the number of topics in the model should solve this issue.
+Let us set the number of topics to `12` and observe the plots at the cluster level. Most topics are covered by several clusters. Fot instance, `topic 10` is covered in several clusters of the humanities (`History`, `Literature` and `Philosophy`) and social sciences (`International Relations`, `International Law` and `Economics`). For a liberal arts program this is a desirable outcome since it encourages students interested in a particular topic to take classes in different clusters, thereby broading their acadmeic horizon (one of the objectives of the program). At the same time, this pattern may be artificially created by the fact that there are more than twelve topics present in the curriculum, meaning that the LDA algorithm has to combine unrelated themes into one topic. This is for instance the case for `topic 3` which combines the themes of law (`law`, `legal`) and international affairs (`european`, `international`) (see first plot). Increasing the number of topics in the model should solve this issue.
 
 We also observe that the distribution of topics is very different at the course and the cluster level. While courses are usually heavily dominated by a single topics, clusters contain several major topics. Looking at the second plot, we observe that the courses `Computer Science`, `Optimization` and `Philosophy of Language` for instance are heavily dominated by `topic 7`. The fourth plots shows that most clusters contain several topics. Interestingly, this graph shows that the same topic (`topic 10`) dominates the clusters `History`, `International Relations` and `Literature`. This indicates either that the content of the three clusters share some similarity or that `topic 10` contains several different themes.
 
-So far, we have only analyzed models with unlabelled topics. In order to give more substance to our analysis, we assign labels to the topics. To accomplish this, we look at the first plot showing the most important terms of each topic and attempt to identify the common theme(s) among them. Some topics are easier to label than others. `topic 6` is for instance pretty straightforward: it is dominated by the term `search` and also contain the terms `qualitative`, `read`, `interview` and `study`: `topic 6` corresponds to qualitative research skills and we therefore label it `Qual. Res.`[6]. Labelling `topic 7` on the other hand is more trick. The best label I could find is `Engineering`. I have labelled each topic and present the results in the last three plots.
+So far, we have only analyzed models with unlabelled topics. In order to give more substance to our analysis, we assign labels to the topics. To accomplish this, we look at the first plot showing the most important terms of each topic and attempt to identify the common theme(s) among them. Some topics are easier to label than others. `topic 6` is for instance pretty straightforward: it is dominated by the term `search` and also contain the terms `qualitative`, `read`, `interview` and `study`: `topic 6` corresponds to qualitative research skills and we therefore label it `Qual. Res.`. Labelling `topic 7` on the other hand is more trick. The best label I could find is `Engineering`. I have labelled each topic and present the results under the tab `labeled topics`.
 
 The labels give us a better image of the actual content of the courses and the clusters. The last plot indicate thta most clusters cover the topics that we expect them to cover, indicating that the current division of courses in clusters is backed up by the content of the courses. As expected, the cluster `Sociology` covers the topics of `Society` and `Culture` and the cluster `Cultural Studies` covers the topics of `Arts`, `Culture` and `Qual. Res.`. Yet, I am surprised by the absence of certain topics in some clusters. For instance, the cluster `history` lacks the topics of `culture` and `society` and the topic of `research` is also barely present in `Biomedical Sciences`. The former shows the heavy focus of the `history` cluster on war and conflicts (`Foreign Policy`) and the latter reflects the absence of research projects in the classes of the biomedical cluster, something the college might want to investigate.
-
-[1] Ranging from artificial intelligence to Shakespeare and terrorism.
-
-[2] Courses are distributed among 17 clusters e.g. International Relation, Cultural Studies, Biomedical Science, etc.
-
-[3] It also includes a variable with a shorter course title (`Title_short`) which we use use in the plots for a better readability.
-
-[4] We only plot a selection of twelve courses to keep the plots readable.
-
-[5] One of the objectives of the program.
-
-[6] This is a subjective choice and the reader may find a more fitting label.

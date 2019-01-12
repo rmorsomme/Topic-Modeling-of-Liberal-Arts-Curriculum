@@ -1,0 +1,10 @@
+name: shiny_app
+title:
+username:
+account: rmorsomme
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 638478
+bundleId: 1810578
+url: https://rmorsomme.shinyapps.io/shiny_app/
+when: 1547302529.98843

@@ -24,309 +24,9 @@ scale_y_reordered <- function(..., sep = "___") {
 }
 
 
-# Define UI for app ####
-ui <- navbarPage(
-  
-  # App title
-  "Results",
-  
-  # Panel 1 for tf-idf ####
-  navbarMenu(
-    
-    # Panel title
-    title = "Important Terms",
-    
-    # Subpanel 1.1: tf-idf - course
-    tabPanel(
-      
-      # SubPanel title
-      title = "Course",
-      
-      # Sidebar layout
-      sidebarLayout(
-        
-        # Sidebar panel for input
-        sidebarPanel(
-          
-          # Input: button for Courses
-          selectizeInput(
-            inputId = "tfidfA_course",
-            label = "Courses (max 9)",
-            choice = sort(unique(tf_idf$`Course Title`)),
-            selected = unique(tf_idf$`Course Title`)[168 : 172],
-            multiple = TRUE,
-            options = list(maxItems = 9)
-          )
-          
-        ),
-        
-        # Main panel (output)
-        mainPanel(
-          
-          # Output: Title of plots
-          h3(textOutput(outputId = "tfidfA_title"), align = "center"),
-          
-          # Output: Barplot
-          plotOutput(outputId = "tfidfA_BP"),
-          
-          # Output: Word cloud
-          plotOutput(outputId = "tfidfA_WC")
-          
-        )
-        
-      )
-      
-    ),
-    
-    # Subpanel 1.2 tf-idf - Cluster
-    tabPanel(
-      
-      # Panel title
-      title = "Cluster",
-      
-      # Sidebar layout
-      sidebarLayout(
-        
-        # Sidebar panel for input
-        sidebarPanel(
-          
-          # Input: button for Courses
-          selectizeInput(
-            inputId = "tfidfB_cluster",
-            label = "Cluster (max 9)",
-            choice = sort(unique(tf_idf$Cluster)),
-            selected = unique(tf_idf$Cluster)[1 : 5],
-            multiple = TRUE,
-            options = list(maxItems = 9)
-          )
-          
-        ),
-        
-        # Main panel (output)
-        mainPanel(
-          
-          # Output: Title of plots
-          h3(textOutput(outputId = "tfidfB_title"), align = "center"),
-          
-          # Output: Barplot
-          plotOutput(outputId = "tfidfB_BP"),
-          
-          # Output: Word cloud
-          plotOutput(outputId = "tfidfB_WC")
-          
-        )
-        
-      )
-      
-    )
-    
-  ),
-  
-  # Panel 2 for term emergence ####
-  tabPanel(
-    
-    # Panel title
-    title = "Term Emergence",
-    
-    fluidPage(
-      
-      # Sidebar layout
-      sidebarLayout(
-        
-        # Sidebar panel for input
-        sidebarPanel(
-          
-          # Input: Buttons for the years
-          radioButtons(inputId = "emergence_year_old",
-                       label = "Year (old)",
-                       choices = c("2014-2015", "2015-2016", "2017-2018", "2018-2019"),
-                       selected = "2014-2015"),
-          
-          radioButtons(inputId = "emergence_year_recent",
-                       label = "Year (recent)",
-                       choices = c("2014-2015", "2015-2016", "2017-2018", "2018-2019"),
-                       selected = "2018-2019")
-          
-        ),
-        
-        # Main panel (output)
-        mainPanel(
-          
-          # Output: Title of plots
-          h3(textOutput(outputId = "Emergence_title"), align = "center"),
-          
-          # Output: Barplot
-          plotOutput(outputId = "Emergence_BP"),
-          
-          # Output: Word Cloud
-          plotOutput(outputId = "Emergence_WC")
-          
-        )
-        
-      )
-      
-    )
-    
-  ),
-  
-  # Panel 3 for topic modeling ----
-  navbarMenu(
-    
-    # Panel title
-    title = "Topic Modeling",
-    
-    # Panel 3.1: topic modeling - course
-    tabPanel(
-      
-      # Panel title
-      title = "Course",
-      
-      # Sidebar layout
-      sidebarLayout(
-        
-        # Sidebar panel for input
-        sidebarPanel(
-          
-          # Input: button for number of topics
-          radioButtons(
-            inputId = "modelingA_ntopic",
-            label = "Number of Topics",
-            choices = c("5"  = "LDA_5",
-                        "12" = "LDA_12",
-                        "17" = "LDA_17",
-                        "25" = "LDA_25"),
-            select = "LDA_12"
-          ),
-          
-          # Input: button for Courses
-          selectizeInput(
-            inputId = "modelingA_course",
-            label = "Courses (max 9)",
-            choice = sort(unique(tf_idf$`Course Title`)),
-            selected = c(unique(tf_idf$`Course Title`)[168 : 172], "Computer Science", "Optimization", "Philosophy of Language"),
-            multiple = TRUE,
-            options = list(maxItems = 9)
-          )
-          
-        ),
-        
-        # Main panel (output)
-        mainPanel(
-          
-          # Output: Barplot
-          h4(textOutput(outputId = "modelingA_beta_title"), align = "center"),
-          plotOutput(outputId = "modelingA_beta_plot"),
-          
-          # Output: Word cloud
-          h4(textOutput(outputId = "modelingA_gamma1_title"), align = "center"),
-          plotOutput(outputId = "modelingA_gamma1_plot"),
-          
-          # Output: Word cloud
-          h4(textOutput(outputId = "modelingA_gamma2_title"), align = "center"),
-          plotOutput(outputId = "modelingA_gamma2_plot")
-          
-        )
-        
-      )
-      
-    ),
-    
-    # Panel 3B: topic modeling - cluster
-    tabPanel(
-      
-      # Panel title
-      title = "Cluster",
-      
-      # Sidebar layout
-      sidebarLayout(
-        
-        # Sidebar panel for input
-        sidebarPanel(
-          
-          # Input: button for number of topics
-          radioButtons(
-            inputId = "modelingB_ntopic",
-            label = "Number of Topics",
-            choices = c("5"  = "LDA_5",
-                        "12" = "LDA_12",
-                        "17" = "LDA_17",
-                        "25" = "LDA_25"),
-            select = "LDA_12"
-          ),
-          
-          # Input: button for Courses
-          selectizeInput(
-            inputId = "modelingB_cluster",
-            label = "Cluster (max 9)",
-            choice = sort(unique(d_course$Cluster[!is.na(d_course$Cluster)])),
-            selected = unique(d_course$Cluster[!is.na(d_course$Cluster)])[1:5],
-            multiple = TRUE,
-            options = list(maxItems = 9)
-          )
-          
-        ),
-        
-        # Main panel (output)
-        mainPanel(
-          
-          # Output: Barplot
-          h4(textOutput(outputId = "modelingB_beta_title"), align = "center"),
-          plotOutput(outputId = "modelingB_beta_plot"),
-          
-          # Output: Word cloud
-          h4(textOutput(outputId = "modelingB_gamma1_title"), align = "center"),
-          plotOutput(outputId = "modelingB_gamma1_plot"),
-          
-          # Output: Word cloud
-          h4(textOutput(outputId = "modelingB_gamma2_title"), align = "center"),
-          plotOutput(outputId = "modelingB_gamma2_plot")
-          
-        )
-        
-      )
-      
-    ),
-    
-    
-    # Panel 3C: topic modeling - label
-    tabPanel(
-      
-      # Panel title
-      title = "Labeled Topics",
-      
-      # Sidebar layout
-      sidebarLayout(
-        
-        sidebarPanel = NULL,
-        
-        # Main panel (output)
-        mainPanel = mainPanel(
-          
-          # Output: Barplot
-          h4(textOutput(outputId = "modelingC_beta_title"), align = "center"),
-          plotOutput(outputId = "modelingC_beta_plot"),
-          
-          # Output: Word cloud
-          h4(textOutput(outputId = "modelingC_gamma1_title"), align = "center"),
-          plotOutput(outputId = "modelingC_gamma1_plot"),
-          
-          # Output: Word cloud
-          h4(textOutput(outputId = "modelingC_gamma2_title"), align = "center"),
-          plotOutput(outputId = "modelingC_gamma2_plot")
-          
-        )
-        
-      )
-      
-    )
-    
-  )
-  
-)
-
-
-# Define server for app ####
-server <- function(input, output) {
+#
+# Sever
+function(input, output) {
   
   #
   # tf-idf A: title
@@ -659,8 +359,8 @@ server <- function(input, output) {
       filter(Cluster %in% input$modelingB_cluster) %>%
       rename(facet = Cluster) %>%
       group_by(facet, topic) %>%
-        summarise(gamma = sum(gamma)) %>%
-        filter(gamma > 0.05) %>%
+      summarise(gamma = sum(gamma)) %>%
+      filter(gamma > 0.05) %>%
       ungroup %>%
       
       ggplot(aes(reorder_within(topic, by = gamma, within = facet), y = gamma, fill = topic)) +
@@ -684,13 +384,13 @@ server <- function(input, output) {
   output$modelingC_beta_plot  <- renderPlot({
     
     table_topic <- tibble(`Topic Name` = c("Arts", "Psycho/policy", "(Int.) Law",
-                                                  "Development", "Culture", "Qual. Res.",
-                                                  "Engineering", "Biology", "Society",
-                                                  "Foreign Policy", "Reserach", "Skills"),
+                                           "Development", "Culture", "Qual. Res.",
+                                           "Engineering", "Biology", "Society",
+                                           "Foreign Policy", "Reserach", "Skills"),
                           topic_number = 1 : 12)
     
     tidy(LDA_12, matrix = "beta") %>%
-    left_join(table_topic, by = c("topic" = "topic_number")) %>%
+      left_join(table_topic, by = c("topic" = "topic_number")) %>%
       group_by(`Topic Name`) %>%
       top_n(10, beta) %>%
       ungroup %>%
@@ -725,8 +425,8 @@ server <- function(input, output) {
       left_join(d_course, by = c("document" = "Code")) %>%
       rename(facet = Cluster) %>%
       group_by(facet, `Topic Name`) %>%
-        summarise(gamma = sum(gamma)) %>%
-        filter(gamma > 0.05) %>%
+      summarise(gamma = sum(gamma)) %>%
+      filter(gamma > 0.05) %>%
       ungroup %>%
       
       ggplot(aes(reorder_within(facet, by = gamma, within = `Topic Name`), y = gamma, fill = `Topic Name`)) +
@@ -759,9 +459,9 @@ server <- function(input, output) {
       left_join(d_course, by = c("document" = "Code")) %>%
       rename(facet = Cluster) %>%
       group_by(facet, `Topic Name`) %>%
-        summarise(gamma = sum(gamma)) %>%
-        filter(gamma > 0.05,
-               ! is.na(facet)) %>%
+      summarise(gamma = sum(gamma)) %>%
+      filter(gamma > 0.05,
+             ! is.na(facet)) %>%
       ungroup %>%
       
       ggplot(aes(reorder_within(`Topic Name`, by = gamma, within = facet), y = gamma, fill = `Topic Name`)) +
@@ -776,6 +476,3 @@ server <- function(input, output) {
   })
   
 }
-
-# Create Shiny app ####
-shinyApp(ui = ui, server = server)
