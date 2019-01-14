@@ -54,8 +54,8 @@ d_description  <- tibble(Code            = character(0),
                          `Calendar Year` = character(0),
                          Description     = character(0))
 
-course_code <- c("COR", "HUM", "SCI", "SSC", "SKI", "PRO", "UGR", "CAP")
-course_code <- paste(course_code, collapse = "|")
+course_code <- c("COR", "HUM", "SCI", "SSC", "SKI", "PRO", "UGR", "CAP") %>%
+  paste(collapse = "|")
 
 content_to_exclude <- c(
   "^Core Courses \\(COR\\)",
@@ -66,9 +66,8 @@ content_to_exclude <- c(
   "^Project \\(PRO\\)", "^Projects \\(PRO\\)",
   "^Undergraduate Research \\(UGR\\)",
   " UCM Undergraduate\r\nResearch", "UCM Undergraduate\r\n  Research"
-  )
-
-content_to_exclude <- paste(content_to_exclude, collapse = "|")
+  ) %>%
+  paste(collapse = "|")
 
 # Loop 1
 for(n in 1 : n_catalogue){
@@ -93,12 +92,12 @@ for(n in 1 : n_catalogue){
   for(page in first_pages_description){
     
     # Extract Description
-    following_page <- page + 1 # for convenience
-    description <- if(following_page %in% first_pages_description) cat_description[page]
-                   else                                            paste(cat_description[page : following_page], collapse = " ")
+    following_page <-  # for convenience
+    description <- if((page + 1) %in% first_pages_description) cat_description[page]
+                   else                                            paste(cat_description[page : (page + 1)], collapse = " ")
     
     # Save Description
-    Code <- substring(description, first = 1, last = 7)      
+    Code <- substr(description, start = 1, stop = 7)
     year <- calendar_years[n]
     d_description <- d_description %>%
       add_row(Code            = Code,
