@@ -92,9 +92,8 @@ for(n in 1 : n_catalogue){
   for(page in first_pages_description){
     
     # Extract Description
-    following_page <-  # for convenience
     description <- if((page + 1) %in% first_pages_description) cat_description[page]
-                   else                                            paste(cat_description[page : (page + 1)], collapse = " ")
+                   else                                        paste(cat_description[page : (page + 1)], collapse = " ")
     
     # Save Description
     Code <- substr(description, start = 1, stop = 7)
@@ -106,6 +105,11 @@ for(n in 1 : n_catalogue){
     
   } # close for-loop 2 (page)
 } # close for-loop 1 (n)
+
+rm(corpus, n_catalogue, calendar_years, course_code, content_to_exclude,
+   n, cat, page_description_start, page_description_end, cat_description,
+   pages_to_exclude, first_three_letters, first_pages_description,
+   page, description, Code, year)
 ```
 
 ```{r}
@@ -115,11 +119,11 @@ print(d_description)
 ## Tidying
 We save the course descriptions in the [tidy text format ](https://www.tidytextmining.com/tidytext.html) with one row per course-year-term.
 ```{r tidy, eval = FALSE}
-d_description_tidy <- unnest_tokens(d_description, output = word, input = Description)
+d_description <- unnest_tokens(d_description, output = word, input = Description)
 ```
 
 ```{r}
-print(d_description_tidy)
+print(d_description)
 ```
 
 ## Stemming
@@ -133,40 +137,36 @@ Lastly, we stem the terms and filter out stop words. We use the stemmer from the
 
 # Stemming function
 stem_hunspell <- function(term) {
-  # look up the term in the dictionary
-  stems <- hunspell_stem(term)[[1]]
-  
-  # identify the stem
-  if (length(stems) == 0) { # if no stem in dictionary, use  original term
-    stem <- term
-  } else { # if multiple stems, use last one (most basic)
-    stem <- stems[[length(stems)]]
-  }
-  
+  stems  <- hunspell_stem(term)[[1]]    # look up the term in the dictionary
+  n_stem <- length(stems)
+  stem   <- if(n_stem == 0) term       # if no stem in dictionary, return original term
+            else stems[[n_stem]] # if multiple stems, return last one (most basic)
 }
 
 # Dictionary 
-my_dictionary <- d_description_tidy %>%
+my_dictionary <- d_description %>%
   distinct(word) %>%
   mutate(word_stem = purrr::map_chr(.x = word,
                                     .f = stem_hunspell))
 
 # Full join
-d_description_stem <- d_description_tidy %>%
+d_description <- d_description %>%
   full_join(my_dictionary, by = "word") %>%
   rename(word_original = word,
          word          = word_stem) %>%
   # Removing stop words
   filter(!word %in% stop_words$word,
          !word %in% as.character(1:1e3))
+
+rm(stem_hunspell, my_dictionary)
 ```
 
 ```{r}
-print(d_description_stem) # See humanities (original) - humanity (stem)
+print(d_description) # See humanities (original) - humanity (stem)
 ```
 
 ```{r, echo =  FALSE, eval = FALSE}
-save(d_description, d_description_tidy, d_description_stem, file = "data_prep.RDATA")
+save(d_description, d_course, file = "data_prep.RDATA")
 ```
 
 # Analysis
