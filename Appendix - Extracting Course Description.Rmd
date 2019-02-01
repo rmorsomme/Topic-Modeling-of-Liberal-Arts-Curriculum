@@ -10,7 +10,7 @@ output:
 We extract the description of each course from the course catalogues. In the `Setup`, we create several objects that we use in the following two loops. We first loop (`Loop 1`) through each course catalogue present in `corpus`. In the loop, we first identify the section of the catalogue containing the course descriptions and assign it to `cat_description`. We then exclude from `cat_descriptions` the headers, appendix, etc, so that it only contains course descriptions. We take advantage of the fact that the the first line of a course description always starts with the code of the course, meaning that the first three characters of the first page of a description are one of the following `r c("COR", "HUM", "SCI", "SSC", "SKI", "PRO", "UGR", "CAP")`. Using `grep()`, we can therefore easily identify the first page of each description which we assign to `first_pages_description`.
 
 We then loop (`Loop 2`) through the first pages of the course descriptions. In the loop, we check if the description is one- or two-page long: if the following page is the first page of a description, then the description is only one page long; otherwise, the description is two page long and consists of the current and the following page[^7]. Once we have a course description, we use `substring(first = 1, last = 7)` to extract the code of the course (3 letters and 4 numbers) and save the description, with its code and the year of the catalogue in the tibble `d_description`.
-```{r description, cache = TRUE, message = FALSE}
+```{r description, message = FALSE}
 
 library(tm)
 library(tidyverse)
