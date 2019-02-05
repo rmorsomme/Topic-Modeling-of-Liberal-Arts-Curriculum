@@ -1,6 +1,7 @@
 
 # Setup ####
 library(shiny)
+library(tidyverse)
 load("results_data.RDATA")
 
 # Functions for ordering bars within facet in ggplot.
@@ -19,6 +20,22 @@ scale_y_reordered <- function(..., sep = "___") {
   reg <- paste0(sep, ".+$")
   ggplot2::scale_y_discrete(labels = function(x) gsub(reg, "", x), ...)
 }
+
+
+#
+# Default Course (9)
+course_default <- d_course %>%
+  filter(
+    Code %in% c(
+      "HUM1010", "SSC2043", "SSC2006", "HUM2022",
+      "SCI2002", "SSC3057", "SSC3033", "SKI3002", "SCI2036",
+      "HUM3043", "SSC3032", "SSC2004", "COR1003", "HUM2018"
+      )
+    ) %>%
+  pull(
+    `Course Title`
+    )
+
 
 
 #
@@ -51,7 +68,7 @@ navbarPage(
             inputId = "tfidfA_course",
             label = "Courses (max 16)",
             choice = sort(unique(tf_idf$`Course Title`)),
-            selected = unique(tf_idf$`Course Title`)[168 : 172],
+            selected = course_default,
             multiple = TRUE,
             options = list(maxItems = 16)
           )
@@ -65,7 +82,7 @@ navbarPage(
           h3(textOutput(outputId = "tfidfA_title"), align = "center"),
           
           # Output: Word cloud
-          plotOutput(outputId = "tfidfA_WC")
+          plotOutput(outputId = "tfidfA_WC", height = "600px")
           
         )
         
@@ -104,7 +121,7 @@ navbarPage(
           h3(textOutput(outputId = "tfidfB_title"), align = "center"),
           
           # Output: Word cloud
-          plotOutput(outputId = "tfidfB_WC")
+          plotOutput(outputId = "tfidfB_WC", height = "600px")
           
         )
         
@@ -152,7 +169,7 @@ navbarPage(
           h3(textOutput(outputId = "Emergence_title"), align = "center"),
           
           # Output: Word Cloud
-          plotOutput(outputId = "Emergence_WC")
+          plotOutput(outputId = "Emergence_WC", height = "600px")
           
         )
         
@@ -195,7 +212,7 @@ navbarPage(
             inputId = "modelingA_course",
             label = "Courses (max 16)",
             choice = sort(unique(tf_idf$`Course Title`)),
-            selected = c("Computer Science", "Optimization", "Philosophy of Language"),
+            selected = course_default,
             multiple = TRUE,
             options = list(maxItems = 16)
           )

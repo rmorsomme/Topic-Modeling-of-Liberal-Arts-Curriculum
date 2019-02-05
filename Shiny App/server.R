@@ -55,7 +55,7 @@ function(input, output) {
                                rm_outside      = T) +
       scale_radius(range = c(3, 7), limits = c(0, NA)) +
       scale_color_gradient(low = "red", high = "blue") +
-      facet_wrap(~ `Course Title`) +
+      facet_wrap(~ Title_short) +
       theme(panel.background = element_rect(fill = "white"),
             plot.title = element_text(hjust = 0.5))
     
@@ -141,10 +141,10 @@ function(input, output) {
   output$modelingA_beta_plot  <- renderPlot({
     
     get(input$modelingA_ntopic)$beta %>%
+      mutate(topic = factor(topic)) %>%
       group_by(topic) %>%
       top_n(10, beta) %>%
       ungroup %>%
-      mutate(topic = factor(topic)) %>%
       
       ggplot(aes(x = reorder_within(term, by = beta, within = topic), y = beta, fill = topic)) +
       geom_col(show.legend = F) +
@@ -166,17 +166,16 @@ function(input, output) {
   output$modelingA_gamma1_plot  <- renderPlot({
     
     get(input$modelingA_ntopic)$gamma %>%
+      mutate(topic = factor(topic)) %>%
       left_join(d_course, by = c("document" = "Code")) %>%
       filter(`Course Title` %in% input$modelingA_course,
              gamma > 1e-3) %>%
-      rename(facet = Title_short) %>%
-      group_by(facet) %>%
+      group_by(topic) %>%
       top_n(10, gamma) %>%
       ungroup %>%
-      mutate(topic = factor(topic)) %>%
       
-      ggplot(aes(reorder_within(facet, by = gamma, within = topic), y = gamma, fill = topic)) +
-      geom_col(show.legend = F) +
+      ggplot(aes(reorder_within(Title_short, by = gamma, within = topic), y = gamma, fill = topic)) +
+      geom_col(show.legend = FALSE) +
       facet_wrap(~ topic, scales = "free") +
       scale_x_reordered() +
       coord_flip() +
@@ -195,18 +194,17 @@ function(input, output) {
   output$modelingA_gamma2_plot  <- renderPlot({
     
     get(input$modelingA_ntopic)$gamma %>%
+      mutate(topic = factor(topic)) %>%
       left_join(d_course, by = c("document" = "Code")) %>%
       filter(`Course Title` %in% input$modelingA_course,
              gamma > 1e-3) %>%
-      rename(facet = Title_short) %>%
-      group_by(facet) %>%
+      group_by(document) %>%
       top_n(5, gamma) %>%
       ungroup %>%
-      mutate(topic = factor(topic)) %>%
       
-      ggplot(aes(reorder_within(topic, by = gamma, within = facet), y = gamma, fill = topic)) +
+      ggplot(aes(reorder_within(topic, by = gamma, within = document), y = gamma, fill = topic)) +
       geom_col(show.legend = F) +
-      facet_wrap(~ facet, scales = "free") +
+      facet_wrap(~ Title_short, scales = "free") +
       scale_x_reordered() +
       coord_flip() +
       labs(x = NULL, y = "Gamma") +
@@ -253,8 +251,7 @@ function(input, output) {
     get(input$modelingB_ntopic)$gamma %>%
       left_join(d_course, by = c("document" = "Code")) %>%
       filter(Cluster %in% input$modelingB_cluster) %>%
-      rename(facet = Cluster) %>%
-      group_by(facet, topic) %>%
+      group_by(Cluster, topic) %>%
       summarise(gamma = sum(gamma)) %>%
       filter(gamma > 1e-3) %>%
       group_by(topic) %>%
@@ -262,7 +259,7 @@ function(input, output) {
       ungroup %>%
       mutate(topic = factor(topic)) %>%
       
-      ggplot(aes(reorder_within(facet, by = gamma, within = topic), y = gamma, fill = topic)) +
+      ggplot(aes(reorder_within(Cluster, by = gamma, within = topic), y = gamma, fill = topic)) +
       geom_col(show.legend = F) +
       facet_wrap(~ topic, scales = "free") +
       scale_x_reordered() +
@@ -281,20 +278,19 @@ function(input, output) {
   output$modelingB_gamma2_plot  <- renderPlot({
     
     get(input$modelingB_ntopic)$gamma %>%
+      mutate(topic = factor(topic)) %>%
       left_join(d_course, by = c("document" = "Code")) %>%
       filter(Cluster %in% input$modelingB_cluster) %>%
-      rename(facet = Cluster) %>%
-      group_by(facet, topic) %>%
-      summarise(gamma = sum(gamma)) %>%
-      filter(gamma > 1e-2) %>%
-      group_by(facet) %>%
-      top_n(5, gamma) %>%
+      group_by(Cluster, topic) %>%
+        summarise(gamma = sum(gamma)) %>%
+        filter(gamma > 1e-2) %>%
+      group_by(Cluster) %>%
+        top_n(5, gamma) %>%
       ungroup %>%
-      mutate(topic = factor(topic)) %>%
       
-      ggplot(aes(reorder_within(topic, by = gamma, within = facet), y = gamma, fill = topic)) +
+      ggplot(aes(reorder_within(topic, by = gamma, within = Cluster), y = gamma, fill = topic)) +
       geom_col(show.legend = F) +
-      facet_wrap(~ facet, scales = "free") +
+      facet_wrap(~ Cluster, scales = "free") +
       scale_x_reordered() +
       coord_flip() +
       labs(x = NULL, y = "Gamma") +
