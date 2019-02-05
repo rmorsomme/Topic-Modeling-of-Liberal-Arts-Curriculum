@@ -1,9 +1,6 @@
 
 # Setup ####
 library(shiny)
-library(tidyverse)
-library(tidytext)
-library(ggwordcloud)
 load("results_data.RDATA")
 
 # Functions for ordering bars within facet in ggplot.
@@ -52,11 +49,11 @@ navbarPage(
           # Input: button for Courses
           selectizeInput(
             inputId = "tfidfA_course",
-            label = "Courses (max 9)",
+            label = "Courses (max 16)",
             choice = sort(unique(tf_idf$`Course Title`)),
             selected = unique(tf_idf$`Course Title`)[168 : 172],
             multiple = TRUE,
-            options = list(maxItems = 9)
+            options = list(maxItems = 16)
           )
           
         ),
@@ -91,11 +88,11 @@ navbarPage(
           # Input: button for Courses
           selectizeInput(
             inputId = "tfidfB_cluster",
-            label = "Cluster (max 9)",
+            label = "Cluster (max 16)",
             choice = sort(unique(tf_idf$Cluster)),
-            selected = unique(tf_idf$Cluster)[1 : 5],
+            selected = unique(tf_idf$Cluster)[1 : 10],
             multiple = TRUE,
-            options = list(maxItems = 9)
+            options = list(maxItems = 16)
           )
           
         ),
@@ -132,15 +129,19 @@ navbarPage(
         sidebarPanel(
           
           # Input: Buttons for the years
-          radioButtons(inputId = "emergence_year_old",
-                       label = "Year (old)",
-                       choices = c("2014-2015", "2015-2016", "2016-2017", "2017-2018", "2018-2019"),
-                       selected = "2014-2015"),
+          radioButtons(
+            inputId = "emergence_year_old",
+            label = "Year (old)",
+            choices = c("2014-2015", "2015-2016", "2016-2017", "2017-2018", "2018-2019"),
+            selected = "2014-2015"
+            ),
           
-          radioButtons(inputId = "emergence_year_recent",
-                       label = "Year (recent)",
-                       choices = c("2014-2015", "2015-2016", "2016-2017", "2017-2018", "2018-2019"),
-                       selected = "2018-2019")
+          radioButtons(
+            inputId = "emergence_year_recent",
+            label = "Year (recent)",
+            choices = c("2014-2015", "2015-2016", "2016-2017", "2017-2018", "2018-2019"),
+            selected = "2018-2019"
+            )
           
         ),
         
@@ -184,19 +185,19 @@ navbarPage(
           radioButtons(
             inputId = "modelingA_ntopic",
             label = "Number of Topics",
-            choices = c("5 (with labels)"    = "LDA_5" ,
-                        "20 (without labels)" = "LDA_20"),
+            choices = c("5 (with labels)"     = "LDA_5" ,
+                        "45 (without labels)" = "LDA_45"),
             select = "LDA_5"
           ),
           
           # Input: button for Courses
           selectizeInput(
             inputId = "modelingA_course",
-            label = "Courses (max 9)",
+            label = "Courses (max 16)",
             choice = sort(unique(tf_idf$`Course Title`)),
-            selected = c(unique(tf_idf$`Course Title`)[168 : 172], "Computer Science", "Optimization", "Philosophy of Language"),
+            selected = c("Computer Science", "Optimization", "Philosophy of Language"),
             multiple = TRUE,
-            options = list(maxItems = 9)
+            options = list(maxItems = 16)
           )
           
         ),
@@ -204,23 +205,36 @@ navbarPage(
         # Main panel (output)
         mainPanel(
           
-          # Output: Barplot
-          h4(textOutput(outputId = "modelingA_beta_title"), align = "center"),
-          plotOutput(outputId = "modelingA_beta_plot"),
+          # Output: Tabset
+          tabsetPanel(
+            
+            type = "tabs",
+                      
+            tabPanel(
+              title = "Key Words of Each Topic", 
+              h4(textOutput(outputId = "modelingA_beta_title"), align = "center"),
+              plotOutput(outputId = "modelingA_beta_plot", height = "600px")
+              ),
+            
+            tabPanel(
+              title = "Main Courses of Each Topic", 
+              h4(textOutput(outputId = "modelingA_gamma1_title"), align = "center"),
+              plotOutput(outputId = "modelingA_gamma1_plot", height = "600px")
+              ),
+            
+            tabPanel(
+              title = "Main Topics per Courses",
+              h4(textOutput(outputId = "modelingA_gamma2_title"), align = "center"),
+              plotOutput(outputId = "modelingA_gamma2_plot", height = "600px")
+              )
+            
+            )
           
-          # Output: Word cloud
-          h4(textOutput(outputId = "modelingA_gamma1_title"), align = "center"),
-          plotOutput(outputId = "modelingA_gamma1_plot"),
-          
-          # Output: Word cloud
-          h4(textOutput(outputId = "modelingA_gamma2_title"), align = "center"),
-          plotOutput(outputId = "modelingA_gamma2_plot")
-          
-        )
+          )
         
-      )
+        )
       
-    ),
+      ),
     
     # Panel 3B: topic modeling - cluster
     tabPanel(
@@ -238,37 +252,51 @@ navbarPage(
           radioButtons(
             inputId = "modelingB_ntopic",
             label = "Number of Topics",
-            choices = c("5 (with labels)"    = "LDA_5" ,
-                        "20 (without labels)" = "LDA_20"),
+            choices = c("5 (with labels)"     = "LDA_5" ,
+                        "45 (without labels)" = "LDA_45"),
             select = "LDA_5"
           ),
           
           # Input: button for Courses
           selectizeInput(
             inputId = "modelingB_cluster",
-            label = "Cluster (max 9)",
+            label = "Cluster (max 16)",
             choice = sort(unique(d_course$Cluster[!is.na(d_course$Cluster)])),
-            selected = unique(d_course$Cluster[!is.na(d_course$Cluster)])[1:5],
+            selected = unique(d_course$Cluster[!is.na(d_course$Cluster)])[1 : 16],
             multiple = TRUE,
-            options = list(maxItems = 9)
+            options = list(maxItems = 16)
           )
           
         ),
         
+        
         # Main panel (output)
         mainPanel(
           
-          # Output: Barplot
-          h4(textOutput(outputId = "modelingB_beta_title"), align = "center"),
-          plotOutput(outputId = "modelingB_beta_plot"),
-          
-          # Output: Word cloud
-          h4(textOutput(outputId = "modelingB_gamma1_title"), align = "center"),
-          plotOutput(outputId = "modelingB_gamma1_plot"),
-          
-          # Output: Word cloud
-          h4(textOutput(outputId = "modelingB_gamma2_title"), align = "center"),
-          plotOutput(outputId = "modelingB_gamma2_plot")
+          # Output: Tabset
+          tabsetPanel(
+            
+            type = "tabs",
+            
+            tabPanel(
+              title = "Key Words of Each Topic", 
+              h4(textOutput(outputId = "modelingB_beta_title"), align = "center"),
+              plotOutput(outputId = "modelingB_beta_plot", height = "600px")
+            ),
+            
+            tabPanel(
+              title = "Main Clusters of Each Topic", 
+              h4(textOutput(outputId = "modelingB_gamma1_title"), align = "center"),
+              plotOutput(outputId = "modelingB_gamma1_plot", height = "600px")
+            ),
+            
+            tabPanel(
+              title = "Main Topics per Clusters",
+              h4(textOutput(outputId = "modelingB_gamma2_title"), align = "center"),
+              plotOutput(outputId = "modelingB_gamma2_plot", height = "600px")
+            )
+            
+          )
           
         )
         

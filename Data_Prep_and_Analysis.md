@@ -1,7 +1,7 @@
 Topic Modeling of Course Content
 ================
 Raphaël Morsomme
-2019-02-01
+2019-02-05
 
 -   [Introduction](#introduction)
 -   [Data preparation](#data-preparation)
@@ -178,10 +178,18 @@ d_description <- my_dictionary %>%
   
 #  
 # Remove stop words
+
+# own stop words
+own_sp <- c("student", "study")
+
 d_description <- d_description %>%
   filter(
+    # remove common stop words
     !word %in% stop_words$word,
-    !word %in% as.character(1 : 1e3)
+    # remove number up ti 1,000
+    !word %in% as.character(1 : 1e3),
+    # remove own stop words
+    !word %in% own_sp
     )
 
 
@@ -192,7 +200,7 @@ rm(stem_hunspell, my_dictionary)
 print(d_description) # See humanities (original) - humanity (stem)
 ```
 
-    ## # A tibble: 172,162 x 4
+    ## # A tibble: 167,961 x 4
     ##    word_original word    Code    `Calendar Year`
     ##    <chr>         <chr>   <chr>   <chr>          
     ##  1 cor1002       cor1002 COR1002 2014-2015      
@@ -205,7 +213,7 @@ print(d_description) # See humanities (original) - humanity (stem)
     ##  8 cor1002       cor1002 HUM3051 2017-2018      
     ##  9 cor1002       cor1002 SSC2067 2017-2018      
     ## 10 cor1002       cor1002 SSC3023 2017-2018      
-    ## # ... with 172,152 more rows
+    ## # ... with 167,951 more rows
 
 Analysis
 ========
@@ -250,20 +258,20 @@ tf_idf <- d_description %>%
 print(tf_idf)
 ```
 
-    ## # A tibble: 24,033 x 9
+    ## # A tibble: 23,790 x 9
     ##    Code  word      n     tf   idf tf_idf `Course Title` Cluster Title_short
     ##    <chr> <chr> <int>  <dbl> <dbl>  <dbl> <chr>          <chr>   <chr>      
-    ##  1 SSC3~ poli~    34 0.0757  1.82  0.137 Public Policy~ Govern~ Public Pol~
-    ##  2 UGR3~ sear~    30 0.101   1.02  0.103 Undergraduate~ Methods Undergradu~
-    ##  3 PRO1~ sear~    27 0.116   1.02  0.119 Research Proj~ Methods Res. Proje~
-    ##  4 SKI3~ conf~    26 0.0716  4.05  0.290 Preparing Con~ Skills  Preparing ~
-    ##  5 SSC2~ law      26 0.120   2.10  0.253 Law and Socie~ Sociol~ Law and So~
-    ##  6 SSC2~ conf~    26 0.0992  2.26  0.224 Conflict Reso~ Int. R~ Conflict R~
-    ##  7 SSC3~ trade    26 0.0533  3.54  0.189 International~ Intern~ Internatio~
-    ##  8 HUM2~ memo~    25 0.0595  3.36  0.200 Cultural Reme~ Cultur~ Cultural R~
-    ##  9 SKI2~ argu~    25 0.0992  2.51  0.249 Argumentation~ Skills  Argumentat~
-    ## 10 SSC2~ publ~    25 0.112   1.97  0.220 Public Health~ Govern~ Public Hea~
-    ## # ... with 24,023 more rows
+    ##  1 SSC3~ poli~    34 0.0783  1.82  0.142 Public Policy~ Govern~ Public Pol~
+    ##  2 UGR3~ sear~    30 0.106   1.02  0.108 Undergraduate~ Methods Undergradu~
+    ##  3 PRO1~ sear~    27 0.117   1.02  0.119 Research Proj~ Methods Res. Proje~
+    ##  4 SKI3~ conf~    26 0.0762  4.05  0.309 Preparing Con~ Skills  Preparing ~
+    ##  5 SSC2~ law      26 0.124   2.10  0.262 Law and Socie~ Sociol~ Law and So~
+    ##  6 SSC2~ conf~    26 0.102   2.26  0.230 Conflict Reso~ Int. R~ Conflict R~
+    ##  7 SSC3~ trade    26 0.0539  3.54  0.191 International~ Intern~ Internatio~
+    ##  8 HUM2~ memo~    25 0.0617  3.36  0.207 Cultural Reme~ Cultur~ Cultural R~
+    ##  9 SKI2~ argu~    25 0.102   2.51  0.255 Argumentation~ Skills  Argumentat~
+    ## 10 SSC2~ publ~    25 0.115   1.97  0.226 Public Health~ Govern~ Public Hea~
+    ## # ... with 23,780 more rows
 
 ``` r
 tf_idf_cluster <- tf_idf %>%
@@ -324,7 +332,7 @@ results_n_topics <- d_cast %>%
   FindTopicsNumber(
     
     # Number of topics tried
-    topics = seq(5, 75, by = 5), # 65
+    topics = seq(5, 105, by = 5),
   
     # metrics considered
     metrics = c(
@@ -340,12 +348,12 @@ results_n_topics <- d_cast %>%
     # Parameter of Gibbs optimizer
     control = list(
       
-      nstart  = 3,
-      seed    = c(1 : 3),
+      nstart  = 10,
+      seed    = c(1 : 10),
       best    = TRUE,
       
       burnin  = 500,
-      iter    = 3500,
+      iter    = 2000,
       thin    = 100
       ),
     
@@ -356,27 +364,38 @@ results_n_topics <- d_cast %>%
 ```
 
 ``` r
-#FindTopicsNumber_plot(results_n_topics[c(1, 2)]) # NaN for some reason
-FindTopicsNumber_plot(results_n_topics[c(1, 3)])
+FindTopicsNumber_plot(results_n_topics[c(1, 3 : 5)]) # we do not include XXX because it produces NaN for some reason.
 ```
 
 ![](Data_Prep_and_Analysis_files/figure-markdown_github/LDA%20n%20topics%20plot-1.png)
 
-``` r
-FindTopicsNumber_plot(results_n_topics[c(1, 4)])
-```
+Deveaud2014 is uninformative in our case. CaoJuan2009 and Arun2010 indicate that `45` is the appropriate number of topics for the topic model.
 
-![](Data_Prep_and_Analysis_files/figure-markdown_github/LDA%20n%20topics%20plot-2.png)
+Let us thus create a topic model with `45` topics, as well as one with `5` topics for illustration
 
 ``` r
-FindTopicsNumber_plot(results_n_topics[c(1, 5)])
-```
+#
+# 45 topics (ideal number of topics)
+LDA_45  <- LDA(
+  
+  x       = d_cast ,
+  k       = 45      ,
+  method  = "Gibbs",
+  
+  control = list(
+    
+      nstart  = 10,
+      seed    = c(1 : 10),
+      best    = TRUE,
+      
+      burnin  = 500,
+      iter    = 2000,
+      thin    = 100
+    
+    )
+  )
 
-![](Data_Prep_and_Analysis_files/figure-markdown_github/LDA%20n%20topics%20plot-3.png)
 
-All three metrics indicate that `20` is a suitable number of topics.
-
-``` r
 #
 # 5 topics (for illustration)
 LDA_5  <- LDA(
@@ -387,35 +406,13 @@ LDA_5  <- LDA(
   
   control = list(
     
-    nstart  = 10,
-    seed    = c(1 : 10),
-    best    = TRUE,
-    
-    burnin  = 500,
-    iter    = 3000,
-    thin    = 100
-    
-    )
-  )
-
-
-#
-# 20 topics (ideal number of topics)
-LDA_20  <- LDA(
-  
-  x       = d_cast ,
-  k       = 20      ,
-  method  = "Gibbs",
-  
-  control = list(
-    
-    nstart  = 10,
-    seed    = c(1 : 10),
-    best    = TRUE,
-    
-    burnin  = 500,
-    iter    = 3000,
-    thin    = 100
+      nstart  = 10,
+      seed    = c(1 : 10),
+      best    = TRUE,
+      
+      burnin  = 500,
+      iter    = 2000,
+      thin    = 100
     
     )
   )

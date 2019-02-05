@@ -25,7 +25,7 @@ scale_y_reordered <- function(..., sep = "___") {
 
 
 #
-# Sever
+# Sever ####
 function(input, output) {
   
   #
@@ -135,7 +135,7 @@ function(input, output) {
   # Modeling A: beta
   output$modelingA_beta_title <- renderText({
     
-    "Key Words of each Topic"
+    "Key Words of Each Topic"
     
   })
   output$modelingA_beta_plot  <- renderPlot({
@@ -144,12 +144,13 @@ function(input, output) {
       group_by(topic) %>%
       top_n(10, beta) %>%
       ungroup %>%
+      mutate(topic = factor(topic)) %>%
       
       ggplot(aes(x = reorder_within(term, by = beta, within = topic), y = beta, fill = topic)) +
       geom_col(show.legend = F) +
       facet_wrap(~ topic, scales = "free") +
       scale_x_reordered() +
-      labs(x = "Terms", y = "Beta distribution") +
+      labs(x = NULL, y = "Beta distribution") +
       coord_flip() +
       theme_light() +
       theme(plot.title = element_text(hjust = 0.5))
@@ -159,7 +160,7 @@ function(input, output) {
   # Modeling A: gamma1
   output$modelingA_gamma1_title <- renderText({
     
-    "Main Courses of each Topic"
+    "Main Courses of Each Topic"
     
   })
   output$modelingA_gamma1_plot  <- renderPlot({
@@ -167,8 +168,12 @@ function(input, output) {
     get(input$modelingA_ntopic)$gamma %>%
       left_join(d_course, by = c("document" = "Code")) %>%
       filter(`Course Title` %in% input$modelingA_course,
-             gamma > 0.05) %>%
+             gamma > 1e-3) %>%
       rename(facet = Title_short) %>%
+      group_by(facet) %>%
+      top_n(10, gamma) %>%
+      ungroup %>%
+      mutate(topic = factor(topic)) %>%
       
       ggplot(aes(reorder_within(facet, by = gamma, within = topic), y = gamma, fill = topic)) +
       geom_col(show.legend = F) +
@@ -192,8 +197,12 @@ function(input, output) {
     get(input$modelingA_ntopic)$gamma %>%
       left_join(d_course, by = c("document" = "Code")) %>%
       filter(`Course Title` %in% input$modelingA_course,
-             gamma > 0.05) %>%
+             gamma > 1e-3) %>%
       rename(facet = Title_short) %>%
+      group_by(facet) %>%
+      top_n(5, gamma) %>%
+      ungroup %>%
+      mutate(topic = factor(topic)) %>%
       
       ggplot(aes(reorder_within(topic, by = gamma, within = facet), y = gamma, fill = topic)) +
       geom_col(show.legend = F) +
@@ -206,11 +215,12 @@ function(input, output) {
     
   })
   
+  
   #
   # Modeling B: beta
   output$modelingB_beta_title <- renderText({
     
-    "Key Terms of each Topic"
+    "Key Terms of Each Topic"
     
   })
   output$modelingB_beta_plot  <- renderPlot({
@@ -219,12 +229,13 @@ function(input, output) {
       group_by(topic) %>%
       top_n(10, beta) %>%
       ungroup %>%
+      mutate(topic = factor(topic)) %>%
       
       ggplot(aes(x = reorder_within(term, by = beta, within = topic), y = beta, fill = topic)) +
       geom_col(show.legend = F) +
       facet_wrap(~ topic, scales = "free") +
       scale_x_reordered() +
-      labs(x = "Terms", y = "Beta distribution") +
+      labs(x = NULL, y = "Beta distribution") +
       coord_flip() +
       theme_light() +
       theme(plot.title = element_text(hjust = 0.5))
@@ -234,7 +245,7 @@ function(input, output) {
   # Modeling B: gamma1
   output$modelingB_gamma1_title <- renderText({
     
-    "Main Clusters of each Topic"
+    "Main Clusters of Each Topic"
     
   })
   output$modelingB_gamma1_plot  <- renderPlot({
@@ -245,8 +256,11 @@ function(input, output) {
       rename(facet = Cluster) %>%
       group_by(facet, topic) %>%
       summarise(gamma = sum(gamma)) %>%
-      filter(gamma > 0.05) %>%
+      filter(gamma > 1e-3) %>%
+      group_by(topic) %>%
+      top_n(10, gamma) %>%
       ungroup %>%
+      mutate(topic = factor(topic)) %>%
       
       ggplot(aes(reorder_within(facet, by = gamma, within = topic), y = gamma, fill = topic)) +
       geom_col(show.legend = F) +
@@ -258,7 +272,6 @@ function(input, output) {
       theme(plot.title = element_text(hjust = 0.5))
     
   })
-  
   # Modeling B: gamma2
   output$modelingB_gamma2_title <- renderText({
     
@@ -267,14 +280,17 @@ function(input, output) {
   })
   output$modelingB_gamma2_plot  <- renderPlot({
     
-    get(input$modelingA_ntopic)$gamma %>%
+    get(input$modelingB_ntopic)$gamma %>%
       left_join(d_course, by = c("document" = "Code")) %>%
       filter(Cluster %in% input$modelingB_cluster) %>%
       rename(facet = Cluster) %>%
       group_by(facet, topic) %>%
       summarise(gamma = sum(gamma)) %>%
-      filter(gamma > 0.05) %>%
+      filter(gamma > 1e-2) %>%
+      group_by(facet) %>%
+      top_n(5, gamma) %>%
       ungroup %>%
+      mutate(topic = factor(topic)) %>%
       
       ggplot(aes(reorder_within(topic, by = gamma, within = facet), y = gamma, fill = topic)) +
       geom_col(show.legend = F) +
@@ -286,6 +302,5 @@ function(input, output) {
       theme(plot.title = element_text(hjust = 0.5))
     
   })
-
   
 }
