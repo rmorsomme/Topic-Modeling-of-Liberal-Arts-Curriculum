@@ -18,6 +18,7 @@ Raphaël Morsomme
         -   [Results](#results-1)
     -   [Topic Modeling](#topic-modeling)
         -   [Estimating the ideal number of topics](#estimating-the-ideal-number-of-topics)
+        -   [Topic label](#topic-label)
         -   [Results](#results-2)
 
 ``` r
@@ -302,19 +303,21 @@ Again, the reader can visualize the results on the [Shiny App](https://rmorsomme
 Topic Modeling
 --------------
 
-Finally, we use the Latent Dirichlet Allocation (LDA) algorithm to fit a topic model to the corpus of course descriptions. Given a corpus of documents and a predetermined number of topics, the LDA algorithm outputs a topic model which gives the importance of each term to the topics (beta distribution) and the importance of each topic to the documents (gamma distribution). In other words, the LDA finds the mixture of words associated with each topic and the mixture of topics associated with each document. The advantage of the LDA over classic clustering methods is that is allows for overlap of terms across topics and of topics across documents, thereby offering a model that is closer to natural language.
+Finally, we use the Latent Dirichlet Allocation (LDA) algorithm to fit a topic model to the corpus of course descriptions. Given a corpus of documents and a predetermined number of topics, the LDA algorithm outputs a topic model that gives the importance of each term to the topics (beta distribution) and the importance of each topic to the documents (gamma distribution). In other words, the LDA finds the mixture of words associated with each topic and the mixture of topics associated with each document. The advantage of the LDA algorithm over classic clustering methods is that it allows for overlap of terms across topics and of topics across documents, thereby offering a model that is closer to natural language.
 
 ### Estimating the ideal number of topics
 
-We use the function `ldatunning::FindTopicsNumber()` to estimate the ideal number of topics for the model. The function computes four metrics across different number of topics.
+We use the function `ldatunning::FindTopicsNumber()` to estimate the ideal number of topics for the model. The function computes four metrics assessing the goodness of the model.
 
 ``` r
 d_cast <- d_description %>%
   
-  # Only analyze most recent year
+  # Only consider course descriptions of the most recent year
   filter(
     `Calendar Year` == "2018-2019"
     ) %>%
+  
+  # Create a dtm
   count(
     Code, 
     word
@@ -372,22 +375,24 @@ results_n_topics <- d_cast %>%
 ```
 
 ``` r
-FindTopicsNumber_plot(results_n_topics[c(1, 3 : 5)]) # we do not include XXX because it produces NaN for some reason.
+FindTopicsNumber_plot(results_n_topics[c(1, 3 : 5)])
 ```
 
 ![](Data_Prep_and_Analysis_files/figure-markdown_github/LDA%20n%20topics%20plot-1.png)
 
-Deveaud2014 is uninformative in our case. CaoJuan2009 and Arun2010 indicate that `30` is an appropriate number of topics for the topic model.
+``` r
+# we do not include Griffiths2004 because it produces NaN for some reason.
+```
 
-Let us thus create a topic model with `30` topics (`45` is also a suitable number for the sake of parsimony and because it is easier to visualize, I choose `30` topics), as well as one with `5` topics for illustration
+Deveaud2014 is uninformative in our case. CaoJuan2009 and Arun2010 indicate that a topic model with between `25` and `45` topics offers the bets fit. For parsimony sake and in order to visualize the results more easily on the [Shiny App](https://rmorsomme.shinyapps.io/shiny_app/), we fit a model with `25` topics. We also fit a model with `5` topics that we will label by hand for illustration.
 
 ``` r
 #
-# 30 topics (ideal number of topics)
-LDA_30  <- LDA(
+# 25 topics (ideal number of topics)
+LDA_25  <- LDA(
   
   x       = d_cast ,
-  k       = 30      ,
+  k       = 25      ,
   method  = "Gibbs",
   
   control = my_control
@@ -407,9 +412,15 @@ LDA_5  <- LDA(
   )
 ```
 
+### Topic label
+
+Since the LDA algorithm is unsupervised, the topics are unlabeled. We provide labels for the topics of the model with 5 topics by hand for illustration. To accomplish this, we use the plot `Key Words of Each Topic` on the [Shiny App](https://rmorsomme.shinyapps.io/shiny_app/) and we try to find the common theme across the terms of each topic. For instance, the first topic is characterized by the words `economic`, `law`, `policy`, `international` and `public`; I therefore label it `Policy`. The second topic is dominated by the terms `literature` and `art`; I label it `Arts`. The third topic contains the words `search`, `skill`, `method`, `write`; I label it `Academic Methods`, etc.
+
 ### Results
 
-We present the output of a topic model with three plots which respectively show (i) the most important terms for each topic (ii) the main courses/clusters of each topic and (iii) the most important topics of each course/cluster. For each model, we present the results at the course- an the cluster-level. The LDA is an unsupervised algorithm, meaning that the topic are unlabeled. In the final section, I label the topic manually.
+We present the topic models with three plots. The first plot presents the key words of each topic, the second plot the main courses and clusters of each topic and the third plot the most important topics of each course and cluster.
+
+We have already used the first plot to provide a label to the topics.
 
 Let us set the number of topics to `12` and observe the plots at the cluster level. Most topics are covered by several clusters. Fot instance, `topic 10` is covered in several clusters of the humanities (`History`, `Literature` and `Philosophy`) and social sciences (`International Relations`, `International Law` and `Economics`). For a liberal arts program this is a desirable outcome since it encourages students interested in a particular topic to take classes in different clusters, thereby broading their acadmeic horizon (one of the objectives of the program). At the same time, this pattern may be artificially created by the fact that there are more than twelve topics present in the curriculum, meaning that the LDA algorithm has to combine unrelated themes into one topic. This is for instance the case for `topic 3` which combines the themes of law (`law`, `legal`) and international affairs (`european`, `international`) (see first plot). Increasing the number of topics in the model should solve this issue.
 

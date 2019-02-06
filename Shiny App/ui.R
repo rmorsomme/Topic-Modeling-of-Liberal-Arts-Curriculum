@@ -203,7 +203,7 @@ navbarPage(
             inputId = "modelingA_ntopic",
             label = "Number of Topics",
             choices = c("5 (labeled topics)"     = "LDA_5" ,
-                        "30 (unlabeled topics)" = "LDA_30"),
+                        "25 (unlabeled topics)" = "LDA_25"),
             select = "LDA_5"
           ),
           
@@ -270,7 +270,7 @@ navbarPage(
             inputId = "modelingB_ntopic",
             label = "Number of Topics",
             choices = c("5 (labeled topics)"    = "LDA_5" ,
-                        "30 (unlabeled topics)" = "LDA_30"),
+                        "25 (unlabeled topics)" = "LDA_25"),
             select = "LDA_5"
           ),
           
