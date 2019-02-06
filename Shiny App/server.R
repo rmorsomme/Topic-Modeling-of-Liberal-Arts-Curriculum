@@ -207,7 +207,7 @@ function(input, output) {
       facet_wrap(~ Title_short, scales = "free") +
       scale_x_reordered() +
       coord_flip() +
-      labs(x = NULL, y = "Gamma") +
+      labs(x = NULL, y = "Gamma Distribution") +
       theme_light() +
       theme(plot.title = element_text(hjust = 0.5))
     
@@ -293,7 +293,7 @@ function(input, output) {
       facet_wrap(~ Cluster, scales = "free") +
       scale_x_reordered() +
       coord_flip() +
-      labs(x = NULL, y = "Gamma") +
+      labs(x = NULL, y = "Gamma Distribution") +
       theme_light() +
       theme(plot.title = element_text(hjust = 0.5))
     

@@ -340,24 +340,24 @@ results_n_topics <- d_cast %>%
 FindTopicsNumber_plot(results_n_topics[c(1, 3 : 5)]) # we do not include XXX because it produces NaN for some reason.
 ```
 
-Deveaud2014 is uninformative in our case. CaoJuan2009 and Arun2010 indicate that `45` is the appropriate number of topics for the topic model.
+Deveaud2014 is uninformative in our case. CaoJuan2009 and Arun2010 indicate that `30` is an appropriate number of topics for the topic model.
 
-Let us thus create a topic model with `35` topics, as well as one with `5` topics for illustration
+Let us thus create a topic model with `30` topics (`45` is also a suitable number for the sake of parsimony and because it is easier to visualize, I choose `30` topics), as well as one with `5` topics for illustration
 
-```{r fitting LDA, cache = TRUE}
+```{r fitting LDA 30, cache = TRUE}
 #
-# 35 topics (ideal number of topics)
-LDA_35  <- LDA(
+# 30 topics (ideal number of topics)
+LDA_30  <- LDA(
   
   x       = d_cast ,
-  k       = 35      ,
+  k       = 30      ,
   method  = "Gibbs",
   
   control = my_control
   )
 ```
 
-```{r}
+```{r fitting LDA 5, cache = TRUE}
 #
 # 5 topics (for illustration)
 LDA_5  <- LDA(
@@ -436,8 +436,8 @@ LDA_5 = list(
   )
 
 
-LDA_35 = list(beta  = tidy(LDA_35, matrix = "beta"),
-              gamma = tidy(LDA_35, matrix = "gamma"))
+LDA_30 = list(beta  = tidy(LDA_30, matrix = "beta"),
+              gamma = tidy(LDA_30, matrix = "gamma"))
 
 save(
   
@@ -448,7 +448,7 @@ save(
   d_description,
   
   # Topic modeling
-  d_course, LDA_5,  LDA_35,
+  d_course, LDA_5,  LDA_30,
   
   # File name
   file = "Shiny App/results_data.RDATA"

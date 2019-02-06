@@ -1,12 +1,12 @@
 Code,Course Title,Cluster,Title_short
 CAP3000,Capstone,NA,Capstone
 COR1002,Philosophy of Science,Philosophy,Philo. of Science
-COR1003,Contemporary World History,History,Contemp. World Hist.
+COR1003,Contemporary World History,History,C. W. Hist.
 COR1004,Political Philosophy,Philosophy,Political Philo.
 COR1005,Modeling Nature,Methods,Modeling Nature
 HUM1003,Cultural Studies I: Doing Cultural Studies,Cultural Studies,Cult. Studies I
 HUM1007,Introduction to Philosophy,Philosophy,Intro to Philo
-HUM1010,Common Foundations of Law in Europe,International Law,Found. of Law in Eur.
+HUM1010,Common Foundations of Law in Europe,International Law,Found. Law Eur.
 HUM1011,"Introduction to Art; Representations, Performances and Interactions",Cultural Studies,Intro. to Art
 HUM1012,Pop Songs and Poetry: Theory and Analysis,Cultural Studies,Pop Songs & Poetry
 HUM1013,The Idea of Europe: The Intellectual History of Europe,History,The Idea of Europe
@@ -17,9 +17,9 @@ HUM2007,"States and Nations in Europe, from the Middle Ages to the First World W
 HUM2008,Introduction to Ancient Philosophy,Philosophy,Intro. to Ancient Philo
 HUM2013,The Presence of Art: Reinterpreting Modern and Contemporary Art,Cultural Studies,The Presence of Art
 HUM2014,Philosophers of the 20th Century,Philosophy,Philo. of 20th Century
-HUM2018,Cultural Diversity in a Global Perspective,Sociology,Cult. Div. in Global Persp.
+HUM2018,Cultural Diversity in a Global Perspective,Sociology,Cult. Div.
 HUM2021,Medieval Civilization,History,Medieval Civ.
-HUM2022,Digital Media,Cultural Studies,Digital Media
+HUM2022,Digital Media,Cultural Studies,Dig. Med.
 HUM2030,Media and Technology: Philosophical Perspectives,Cultural Studies,Media & Tech.: Philo. Persp.
 HUM2031,Cultural Studies II: Reading Contemporary Culture,Cultural Studies,Cultural Studies II
 HUM2043,Film Art,Cultural Studies,Film Art
@@ -40,7 +40,7 @@ HUM3036,Narrative Media,Cultural Studies,Narrative Media
 HUM3040,Crucial Differences in the 21st Century,Sociology,Crucial Diff. in 21st Cent.
 HUM3041,Shakespeare on Screen,Literature,Shakespeare on Screen
 HUM3042,"Biopoetics: An Evolutionary Approach to Art, Literature, Music and Religion",Literature,Biopoetics
-HUM3043,"Acts of Literature: The Role of Prose, Poetry and Plays in a Changing World",Literature,Acts of Literature
+HUM3043,"Acts of Literature: The Role of Prose, Poetry and Plays in a Changing World",Literature,Acts of Lit.
 HUM3045,Distributive Justice in Contemporary Political Philosophy,Philosophy,Distributive Justice
 HUM3048,Anthropology of Scientific Practice: Science in Action,Sociology,Anthrop. of Sc. Practice
 HUM3049,"Science, Power and the Construction of Facts",Sociology,"Sc., Power,  Constr. Facts"
@@ -65,7 +65,7 @@ SCI1005,The Information Society,Computer Science,The Information Society
 SCI1009,Introduction to Biology,Biomedical Sciences,Intro to Biology
 SCI1010,Quantitative Reasoning,Mathematics,Quantitative Reasoning
 SCI1016,Sustainable Development: An Introduction,Globalization & SD,Sustainable Dev.
-SCI2002,Discrete Mathematics,Mathematics,Discrete Mathematics
+SCI2002,Discrete Mathematics,Mathematics,Dis. Math.
 SCI2009,Human Physiology,Biomedical Sciences,Human Physiology
 SCI2010,Introduction to Game Theory,Mathematics,Intro. to Game Theory
 SCI2011,Introduction to Programming,Computer Science,Intro. to Programming
@@ -78,7 +78,7 @@ SCI2031,Immunology I,Biomedical Sciences,Immunology I
 SCI2033,Datamining,Computer Science,Datamining
 SCI2034,Brain and Action,Psychology,Brain and Action
 SCI2035,Biochemistry I,Biomedical Sciences,Biochemistry I
-SCI2036,Artificial intelligence,Computer Science,Artificial intelligence
+SCI2036,Artificial intelligence,Computer Science,A. I.
 SCI2037,Cell Biology,Biomedical Sciences,Cell Biology
 SCI2038,Physics,Biomedical Sciences,Physics
 SCI2039,Computer Science,Computer Science,Computer Sc.
@@ -102,7 +102,7 @@ SKI2000,Language Trainings,Skills,Language Trainings
 SKI2005,Back to the Sources,Methods,Back to the Sources
 SKI2007,Presentation Skills,Skills,Presentation Skills
 SKI2048,Introduction to Discourse Analysis,Methods,Discourse Analysis
-SKI2049,Argumentation I,Skills,Argumentation I
+SKI2049,Argumentation I,Skills,Arg. I
 SKI2065,Quantitative Research Methods,Methods,Quant. Res. Methods
 SKI2077,Lab Skills: Cell Biology,Methods,Lab: Cell Biology
 SKI2079,Lab Skills: Human Anatomy and Histology,Methods,Lab: Hum. Anat. & Histi.
@@ -111,7 +111,7 @@ SKI2084,Writing in an Academic Context: Improving Argumentation and Style,Skills
 SKI2085,Ethnography and Qualitative Interviewing I,Methods,Ethn. & Qual. Interview I
 SKI2086,Lab Skills: Biochemistry,Skills,Lab: Biochem.
 SKI2088,Lab Skills: Genetics,Skills,Lab Skills: Genetics
-SKI3002,Argumentation II,Skills,Argumentation II
+SKI3002,Argumentation II,Skills,Arg. II
 SKI3050,Preparing Conference I,Skills,Preparing Conference I
 SKI3051,Preparing Conference II,Skills,Preparing Conference II
 SKI3052,Ethnography and Qualitative Interviewing II,Methods,Ethn. & Qual. Interview II
@@ -123,8 +123,8 @@ SSC1009,Introduction to European Integration,Governance,Introduction to European
 SSC1025,Introduction to Political Science,Governance,Introduction to Political Science
 SSC1027,Principles of Economics,Economics,Principles of Economics
 SSC1029,Sociological Perspectives,Sociology,Sociological Perspectives
-SSC2004,Clinical Psychology,Psychology,Clinical Psychology
-SSC2006,Developmental Psychology,Psychology,Developmental Psychology
+SSC2004,Clinical Psychology,Psychology,Clin. Psy.
+SSC2006,Developmental Psychology,Psychology,Dev. Psy.
 SSC2008,Organization Theory,Business,Organization Theory
 SSC2018,Advertising Marketing: Communication of Brands,Business,Advertising Marketing: Communication of Brands
 SSC2019,Social Psychology,Psychology,Social Psychology
@@ -140,7 +140,7 @@ SSC2037,Conflict Resolution,Int. Relations,Conflict Resolution
 SSC2038,International Macroeconomics,Economics,International Macroeconomics
 SSC2039,History of Political Thought,Philosophy,History of Political Thought
 SSC2042,Rights of the Child,International Law,Rights of the Child
-SSC2043,Development Economics,Economics,Development Economics
+SSC2043,Development Economics,Economics,Dev. Econ.
 SSC2046,Globalization and Inequality,Globalization & SD,Globalization and Inequality
 SSC2048,Intermediate Microeconomics,Economics,Intermediate Microeconomics
 SSC2050,Psychology and the Law,Psychology,Psycho & Law
@@ -165,8 +165,8 @@ SSC3018,Statistics II,Methods,Statistics II
 SSC3019,Human Reasoning and Cognition,Psychology,Human Reasoning and Cognition
 SSC3023,Philosophy of Mind,Philosophy,Philosophy of Mind
 SSC3030,European Institutions,International Law,European Institutions
-SSC3032,"Atrocity Triangle: Perpetrators, Victims and Bystanders",Int. Relations,Atrocity Triangle
-SSC3033,Economic Psychology,Economics,Economic Psychology
+SSC3032,"Atrocity Triangle: Perpetrators, Victims and Bystanders",Int. Relations,Atroc. Tri.
+SSC3033,Economic Psychology,Economics,Econ. Psy.
 SSC3036,American Foreign Policy,Int. Relations,American Foreign Policy
 SSC3038,Contemporary Sociological Theory,Sociology,Contemporary Sociological Theory
 SSC3040,Identities,Sociology,Identities
@@ -181,7 +181,7 @@ SSC3053,Corporate Finance,Business,Corporate Finance
 SSC3054,"International Trade Law: Globalization, Trade and Development",International Law,"International Trade Law: Globalization, Trade and Development"
 SSC3055,Chinese International Relations and Foreign Policy,Int. Relations,Chinese International Relations and Foreign Policy
 SSC3056,"Innovation Systems, Policy and Sustainability Transitions",Globalization & SD,"Innovation Systems, Policy and Sustainability Transitions"
-SSC3057,Economics and Society: History of Economic Thought,Economics,Economics and Society
+SSC3057,Economics and Society: History of Economic Thought,Economics,Econ. & Soc.
 UGR3001,Undergraduate Research PEERS,Methods,Undergraduate Research PEERS
 UGR3002,Undergraduate Research/The Documentary,Skills,Undergraduate Research/The Documentary
 UGR3003,Applied Research & Internship Project,Skills,Applied Research & Internship Project

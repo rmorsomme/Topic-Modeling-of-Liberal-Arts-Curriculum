@@ -202,8 +202,8 @@ navbarPage(
           radioButtons(
             inputId = "modelingA_ntopic",
             label = "Number of Topics",
-            choices = c("5 (with labels)"     = "LDA_5" ,
-                        "45 (without labels)" = "LDA_45"),
+            choices = c("5 (labeled topics)"     = "LDA_5" ,
+                        "30 (unlabeled topics)" = "LDA_30"),
             select = "LDA_5"
           ),
           
@@ -269,8 +269,8 @@ navbarPage(
           radioButtons(
             inputId = "modelingB_ntopic",
             label = "Number of Topics",
-            choices = c("5 (with labels)"     = "LDA_5" ,
-                        "45 (without labels)" = "LDA_45"),
+            choices = c("5 (labeled topics)"    = "LDA_5" ,
+                        "30 (unlabeled topics)" = "LDA_30"),
             select = "LDA_5"
           ),
           

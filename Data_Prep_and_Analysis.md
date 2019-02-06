@@ -1,7 +1,7 @@
 Topic Modeling of Course Content
 ================
 Raphaël Morsomme
-2019-02-05
+2019-02-06
 
 -   [Introduction](#introduction)
 -   [Data preparation](#data-preparation)
@@ -269,7 +269,7 @@ print(tf_idf)
     ##  6 SSC2~ conf~    26 0.102   2.26  0.230 Conflict Reso~ Int. R~ Conflict R~
     ##  7 SSC3~ trade    26 0.0539  3.54  0.191 International~ Intern~ Internatio~
     ##  8 HUM2~ memo~    25 0.0617  3.36  0.207 Cultural Reme~ Cultur~ Cult. Reme~
-    ##  9 SKI2~ argu~    25 0.102   2.51  0.255 Argumentation~ Skills  Argumentat~
+    ##  9 SKI2~ argu~    25 0.102   2.51  0.255 Argumentation~ Skills  Arg. I     
     ## 10 SSC2~ publ~    25 0.115   1.97  0.226 Public Health~ Govern~ Public Hea~
     ## # ... with 23,780 more rows
 
@@ -327,12 +327,29 @@ d_cast <- d_description %>%
 ```
 
 ``` r
+#
+# Parameters of Gibbs optimizer
+my_control <- list(
+  
+  nstart  = 10,
+  seed    = c(1 : 10),
+  best    = TRUE,
+  
+  burnin  = 500,
+  iter    = 2000,
+  thin    = 100
+  
+  )
+
+
+#
+# Simulations
 results_n_topics <- d_cast %>%
   
   FindTopicsNumber(
     
     # Number of topics tried
-    topics = seq(5, 105, by = 5),
+    topics = seq(5, 95, by = 5),
   
     # metrics considered
     metrics = c(
@@ -345,17 +362,8 @@ results_n_topics <- d_cast %>%
     # Method for fitting LDA
     method  = "Gibbs",
     
-    # Parameter of Gibbs optimizer
-    control = list(
-      
-      nstart  = 10,
-      seed    = c(1 : 10),
-      best    = TRUE,
-      
-      burnin  = 500,
-      iter    = 2000,
-      thin    = 100
-      ),
+    # Parameters of Gibbs optimizer
+    control = my_control,
     
     # number of CPU cores to use
     mc.cores = 2L
@@ -369,33 +377,24 @@ FindTopicsNumber_plot(results_n_topics[c(1, 3 : 5)]) # we do not include XXX bec
 
 ![](Data_Prep_and_Analysis_files/figure-markdown_github/LDA%20n%20topics%20plot-1.png)
 
-Deveaud2014 is uninformative in our case. CaoJuan2009 and Arun2010 indicate that `45` is the appropriate number of topics for the topic model.
+Deveaud2014 is uninformative in our case. CaoJuan2009 and Arun2010 indicate that `30` is an appropriate number of topics for the topic model.
 
-Let us thus create a topic model with `45` topics, as well as one with `5` topics for illustration
+Let us thus create a topic model with `30` topics (`45` is also a suitable number for the sake of parsimony and because it is easier to visualize, I choose `30` topics), as well as one with `5` topics for illustration
 
 ``` r
 #
-# 45 topics (ideal number of topics)
-LDA_45  <- LDA(
+# 30 topics (ideal number of topics)
+LDA_30  <- LDA(
   
   x       = d_cast ,
-  k       = 45      ,
+  k       = 30      ,
   method  = "Gibbs",
   
-  control = list(
-    
-      nstart  = 10,
-      seed    = c(1 : 10),
-      best    = TRUE,
-      
-      burnin  = 500,
-      iter    = 2000,
-      thin    = 100
-    
-    )
+  control = my_control
   )
+```
 
-
+``` r
 #
 # 5 topics (for illustration)
 LDA_5  <- LDA(
@@ -404,17 +403,7 @@ LDA_5  <- LDA(
   k       = 5      ,
   method  = "Gibbs",
   
-  control = list(
-    
-      nstart  = 10,
-      seed    = c(1 : 10),
-      best    = TRUE,
-      
-      burnin  = 500,
-      iter    = 2000,
-      thin    = 100
-    
-    )
+  control = my_control
   )
 ```
 
