@@ -456,3 +456,7 @@ save(
   )
 
 ```
+
+# Conclusion
+
+I have analyzed the curriculum of the Liberal Arts bachelor offered by the University College Maastricht, the Netherlands, in three different ways. First, wth the help of the tf-idf, we can provide key words for each courses. This way, students can browse more efficiently through the 200+ courses offered by the college, i.e. have a rapid understanding of what the courses covers. Second, by comparing the curricula across years with the log odd ratio, we can identify terms that have gained and lost importance over time. Third, with the help of the LDA algorithm, we fit a topic model to the curriculum which tells us which topics each course covers.
