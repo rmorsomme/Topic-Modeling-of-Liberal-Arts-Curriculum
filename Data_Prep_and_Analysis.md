@@ -39,7 +39,9 @@ University departments often have little knowledge of the content of their study
 
 In this script, I analyze the content of the curriculum of the University College Maastricht (UCM), Maastricht University, the Netherlands. UCM offers a bachelor in Liberal Arts and Science. Its curriculum contains over two hundred courses on virtually every topic conceivable - ranging from artificial intelligence to Shakespeare, and terrorism - making it a great subject for this type of analysis.
 
-To accomplish this, I analyze the 200-page course catalogue of UCM where each course possesses a description of one or two pages. The analysis is exploratory in nature: instead of answering a specific research question, I explore the textual data to obtain a better understanding of the content of UCM's curriculum. I conduct three analyses. First, I identify the key words of each course with the tf-idf. Second, I compare the evolution of the catalogues over time to identify themes that have emerged and declined. Finally, I fit a topic model on the most recent course catalogue (2018-2019). For this purpose, I use the Latent Dirichlet Allocation algorithm. The reader can use the [Shiny App](https://rmorsomme.shinyapps.io/shiny_app/) to visualize the results of these analyses.
+To accomplish this, I analyze the course catalogues of the last five years where each of the 200+ courses offered at the college has a one-page description. The analysis is exploratory in nature: instead of answering a specific research question, I explore the textual data to obtain a better understanding of the content of UCM's curriculum.
+
+First, with the help of the tf-idf, I identify a series of key words for each courses. The advantage of having key words is that it helps students browse more efficiently through the 200+ courses offered by the college, i.e. have a faster understanding of the content of a course than by reading its one-page description in the catalogue. Second, I compare the catalogues across years to identify themes that have gained and lost importance over time. Finally, with the help of the Latent Dirichlet Allocation algorithm, I fit a topic model to the curriculum which tells us which topics each course covers. The reader can visualize the results of these analyses on the [Shiny App](https://rmorsomme.shinyapps.io/shiny_app/).
 
 Data preparation
 ================
@@ -127,9 +129,9 @@ print(d_description)
 Stemming and stop word removal
 ------------------------------
 
-Lastly, we stem the terms and remove the stop words. We use the stemmer from the `hunspell` package to build the stemming function `stem_hunspell()` which, given a term, returns its stem. We prefer the Hunspell stemmer over the usual Snowball stemmer because it offers a more precise stemming.
+Lastly, we stem the terms and remove the stop words. We use the stemmer `hunspell::hunspell_stem()` to build the stemming function `stem_hunspell()` which, given a term, returns its stem. We prefer the Hunspell stemmer over the usual Snowball stemmer because it offers a more precise stemming.
 
-> **Trick: dictionary-based approach.** Since the function `stem_hunspell()` is not vectorized, it takes a very long time to apply it to all all `340,000` terms of the data set. We therefore create a dictionary that gives the stem of the `8,500` distinct terms present in `d_description_tidy` and then join it with the original data set
+> **Trick: dictionary-based approach.** Since the function `stem_hunspell()` is not vectorized, it takes a very long time to apply it to the `340,000` terms of the data set. We therefore create a dictionary which gives the stem of the `8,500` distinct terms present in `d_description_tidy` and then join it with the original data set.
 
 ``` r
 #
@@ -430,4 +432,4 @@ The third plot gives us an overview of the content of each course/cluster. Looki
 Conclusion
 ==========
 
-I have analyzed the curriculum of the Liberal Arts bachelor offered by the University College Maastricht, the Netherlands, in three different ways. First, wth the help of the tf-idf, we can provide key words for each courses. This way, students can browse more efficiently through the 200+ courses offered by the college, i.e. have a rapid understanding of what the courses covers. Second, by comparing the curricula across years with the log odd ratio, we can identify terms that have gained and lost importance over time. Third, with the help of the LDA algorithm, we fit a topic model to the curriculum which tells us which topics each course covers.
+In thsi script, I analyze the curriculum of the Liberal Arts bachelor offered by the University College Maastricht, the Netherlands. To accomplish this, I analyze the course catalogues of the last five years where each of the 200+ courses offered at the college has a one-page description. First, with the help of the tf-idf, I identify a series of key words for each courses. The advantage of key words is that they help students browse more efficiently through the course catalogue. Second, I compare the catalogues across years to identify themes that have gained and lost importance over time. Finally, with the help of the Latent Dirichlet Allocation algorithm, I fit a topic model to the curriculum which tells us which topics each course covers. These analyses provides important tools for the monitoring and management of the curriculum.
