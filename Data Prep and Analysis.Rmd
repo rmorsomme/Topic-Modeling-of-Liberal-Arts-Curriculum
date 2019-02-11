@@ -138,7 +138,7 @@ Lastly, we stem the terms and remove the stop words. We use the stemmer from the
 > **Trick: dictionary-based approach.** Since the function `stem_hunspell()` is not vectorized, it takes a very long time to apply it to all all `340,000` terms of the data set. We therefore create a dictionary that gives the stem of the `8,500` distinct terms present in `d_description_tidy` and then join it with the original data set
 
 ```{r stem, cache = TRUE}
-
+#
 # Stemming function
 stem_hunspell <- function(term) {
   
@@ -187,10 +187,6 @@ d_description <- my_dictionary %>%
   
 #  
 # Remove stop words
-
-# own stop words
-own_sp <- c("student", "study")
-
 d_description <- d_description %>%
   filter(
     # remove common stop words
@@ -198,7 +194,10 @@ d_description <- d_description %>%
     # remove number up ti 1,000
     !word %in% as.character(1 : 1e3),
     # remove own stop words
-    !word %in% own_sp
+    !word %in% c(
+      "student", 
+      "study"
+      )
     )
 
 
@@ -258,19 +257,19 @@ tf_idf_cluster <- tf_idf %>%
 ```
 
 ### Results
-The reader can visualize the results on the [Shiny App](https://rmorsomme.shinyapps.io/shiny_app/). The tf-idf does a pretty good job at identifying the key words of each course and clusters. If the title of the courses or clusters were absent from the plots, it would still be fairly easy to guess them from the key words. We also observe interesting elements at the cluster level. While the cluster `History` gives a central place to the European continent (with key words like Europe and european), the cluster `International Relations` focuses more on China (chinese).
+The reader can visualize the results on the [Shiny App](https://rmorsomme.shinyapps.io/shiny_app/). The tf-idf does a pretty good job at identifying the key words of each course and clusters. If the word clouds had no title, it would still be fairly easy to guess the name of the course/cluster based on the key words. We also observe interesting elements at the cluster level. While the cluster `History` gives a central place to the European continent (with key words like Europe and european), the cluster `International Relations` focuses more on China (chinese).
 
 ## Term Emergence
 We compare the content of the curriculum across years to identify terms and themes that have declined or emerged over time. To accomplish this, we compare the frequency of the terms in two different catalogues by taking their `log odds ratio`. A positive value indicates that the term is more frequent in the latter catalogue (the term has *emerged*) and a negative value indicates a *decline* in the use of the term in the latter catalogues.
 
 ### Results
-Again, the reader can visualize the results on the [Shiny App](https://rmorsomme.shinyapps.io/shiny_app/). Let us compare the years `2014-2015` (oldest available) and `2018-2019` (most recent). From the plots, we observe that topics that have made the news these last few years such as religion, migrationa and climate have gain importance in the curriculum. This shows that the college has done a good job at adapting its curriculum to the development of the world's affairs. We also observe that the themes of sexuality (with terms like `sex`, `sexual` and `sexuality`) and terrorism (`terrorism`, `crime`) have declined. It is interesting to note that the terms `globalization`, `poverty` and `sustainability` have also become less important in the curriculum. As for the term `portal`, its "emergence" is due to the introduction of a new online student *portal* system in 2016. The terms is not mentioned once in 2014-2015 and appears `19` times in 2018-2019. This shows that human interpretation and a good knowledge of the data are crucial in such analysis.
+Again, the reader can visualize the results on the [Shiny App](https://rmorsomme.shinyapps.io/shiny_app/). Let us compare the oldest year available (`2014-2015`) with the most recent one (`2018-2019`) to analyze the eveolution of the curriculum over a relatively long period of time. We observe that topics that have made the news these last few years such as religion, migration and climate have gained importance in the curriculum. This shows that the college has done a good job at adapting its curriculum to the development of the world's affairs. We also observe that the themes of sexuality (with terms like `sex`, `sexual` and `sexuality`) and terrorism (`terrorism`, `crime`) have declined. It is interesting to note that the terms `globalization`, `poverty` and `sustainability` have also become less important in the curriculum. As for the term `portal`, its "emergence" is due to the introduction of a new online student *portal* system in 2016. The terms is not mentioned once in 2014-2015 and appears `19` times in 2018-2019. This shows that human interpretation and a good knowledge of the data are crucial in such analysis.
 
 ## Topic Modeling
 Finally, we use the Latent Dirichlet Allocation (LDA) algorithm to fit a topic model to the corpus of course descriptions. Given a corpus of documents and a predetermined number of topics, the LDA algorithm outputs a topic model that gives the importance of each term to the topics (beta distribution) and the importance of each topic to the documents (gamma distribution). In other words, the LDA finds the mixture of words associated with each topic and the mixture of topics associated with each document. The advantage of the LDA algorithm over classic clustering methods is that it allows for overlap of terms across topics and of topics across documents, thereby offering a model that is closer to natural language.
 
 ### Estimating the ideal number of topics
-We use the function `ldatunning::FindTopicsNumber()` to estimate the ideal number of topics for the model. The function computes four metrics assessing the goodness of the model.
+We use the function `ldatunning::FindTopicsNumber()` to estimate the ideal number of topics for the topic model. The function computes four metrics that assess the goodness of fit of the model.
 
 ```{r cast, eval = TRUE}
 d_cast <- d_description %>%
@@ -343,7 +342,7 @@ FindTopicsNumber_plot(results_n_topics[c(1, 3 : 5)])
 # we do not include Griffiths2004 because it produces NaN for some reason.
 ```
 
-Deveaud2014 is uninformative in our case. CaoJuan2009 and Arun2010 indicate that a topic model with between `25` and `45` topics offers the bets fit. For parsimony sake and in order to visualize the results more easily on the [Shiny App](https://rmorsomme.shinyapps.io/shiny_app/), we fit a model with `25` topics. We also fit a model with `5` topics that we will label by hand for illustration.
+Deveaud2014 is uninformative in our case. CaoJuan2009 and Arun2010 indicate that a topic model with between `25` and `45` topics offers a good fit of the data. For parsimony sake and in order to visualize the results more easily on the [Shiny App](https://rmorsomme.shinyapps.io/shiny_app/), we fit a model with `25` topics. For illustration, we also fit a model with `5` topics which we will label by hand.
 
 ```{r fitting LDA 25, cache = TRUE}
 #
@@ -372,24 +371,17 @@ LDA_5  <- LDA(
 ```
 
 ### Topic labeling
-Since the LDA is an unsupervised algorithm, the topics are unlabeled. We provide labels for the topics of the model with 5 topics by hand for illustration. To accomplish this, we use the plot `Key Words of Each Topic` on the [Shiny App](https://rmorsomme.shinyapps.io/shiny_app/) and we try to find the common theme across the terms of each topic. For instance, the first topic is characterized by the words `economic`, `law`, `policy`, `international` and `public`; I therefore label it `Policy`. The second topic is dominated by the terms `literature` and `art`; I label it `Arts`. The third topic contains the words `search`, `skill`, `method`, `write`; I label it `Academic Methods`, etc.
+Since the LDA is an unsupervised algorithm, topics come out unlabeled. We provide labels for the topics of the model with 5 topics by hand for illustration. To accomplish this, we use the plot `Key Words of Each Topic` on the [Shiny App](https://rmorsomme.shinyapps.io/shiny_app/) and we try to find the common theme across the key terms of each topic. For instance, the first topic is characterized by the words `economic`, `law`, `policy`, `international` and `public`; I therefore label it `Policy`. The second topic is dominated by the terms `literature` and `art`; I label it `Arts`. The third topic contains the words `search`, `skill`, `method`, `write`; I label it `Academic Skills`, etc.
 
 ### Results
-We present the topic models with three plots. The first plot presents the key words of each topic, the second plot the main courses and clusters of each topic and the third plot the most important topics of each course and cluster.
+We present the two topic models (5 and 25 topics) with three plots each, both at the course and cluster level. The first plot presents the key words of each topic, the second plot the main courses and clusters of each topic and the third plot the most important topics of each course and cluster.
 
-We have already used the first plot to provide a label to the topics. Together with the second plot, it gives us an idea of the content of the topics.
+The first plot gives us an idea of the content of the topics. We have already used it to provide a label to the topics of the model with 5 topics.
 
-The second plot of the model with 25 topics also shows that half of the topics are covered by several clusters and the other half are almost exclusively present in only one cluster. One of the objectives of the Liberal Arts program is to provide students with a interdisciplinary perspective on the . For instance, approaching the issue of tackling climate change from a legal, economics, ecological and ethical perspective. To accomplish this, topics should be covered by different clusters, in order to encourage students to take classes in different disciplines, thereby broading their acadmeic horizon
+The second plot shows how each topic is distributed in the curriculum i.e. whether a topic is concentrated in one course/cluster or spread across several.
+Looking at the model with 25 topics at the cluster level, we observe that around half of the topics are almost exclusively present in only one cluster. This may not be desirable for a Liberal Arts program whose objective is to provide students with a interdisciplinary perspective the matter(s) that interest them (for instance, approaching the topic of climate change from an ecological, political, economic, legal, physical and ethical perspective). Having topics covered by several clusters would discourage students to stick to one cluster (i.e. one discipline) and encourage them to explore several disciplines.
 
-Once we have a good idea of what each topic contains (and have potentially even labeled them), the third plot gives us an overview of the topic covered by each course and cluster. 
-
-
-We also observe that the distribution of topics is very different at the course and the cluster level. While courses are usually heavily dominated by a single topics, clusters contain several major topics. Looking at the second plot, we observe that the courses `Computer Science`, `Optimization` and `Philosophy of Language` for instance are heavily dominated by `topic 7`. The fourth plots shows that most clusters contain several topics. Interestingly, this graph shows that the same topic (`topic 10`) dominates the clusters `History`, `International Relations` and `Literature`. This indicates either that the content of the three clusters share some similarity or that `topic 10` contains several different themes.
-
-So far, we have only analyzed models with unlabelled topics. In order to give more substance to our analysis, we assign labels to the topics. To accomplish this, we look at the first plot showing the most important terms of each topic and attempt to identify the common theme(s) among them. Some topics are easier to label than others. `topic 6` is for instance pretty straightforward: it is dominated by the term `search` and also contain the terms `qualitative`, `read`, `interview` and `study`: `topic 6` corresponds to qualitative research skills and we therefore label it `Qual. Res.`. Labelling `topic 7` on the other hand is more trick. The best label I could find is `Engineering`. I have labelled each topic and present the results under the tab `labeled topics`.
-
-The labels give us a better image of the actual content of the courses and the clusters. The last plot indicate thta most clusters cover the topics that we expect them to cover, indicating that the current division of courses in clusters is backed up by the content of the courses. As expected, the cluster `Sociology` covers the topics of `Society` and `Culture` and the cluster `Cultural Studies` covers the topics of `Arts`, `Culture` and `Qual. Res.`. Yet, I am surprised by the absence of certain topics in some clusters. For instance, the cluster `history` lacks the topics of `culture` and `society` and the topic of `research` is also barely present in `Biomedical Sciences`. The former shows the heavy focus of the `history` cluster on war and conflicts (`Foreign Policy`) and the latter reflects the absence of research projects in the classes of the biomedical cluster, something the college might want to investigate.
-
+The third plot gives us an overview of the content of each course/cluster. Looking at the model with 5 (labeled) topics, we observe that courses and clusters contain the topics that we expect them to cover. For instance, the course *Contemporary World History* (C. W. Hist.), which cover the main social, economic and political developments of the world since 1945, is dominated by the topics `Society` and `Policy`; the course *Artifical Intelligence* (A. I.) is dominated by the topic `STEM`, *Argumentation II* (Arg. II) by `Academic Skills` and *Digital Media* (Dig. Med.) by `Arts` and `Society`. At the cluster level, *Economics*, *Governance*, *International Relations* and *International Law* are dominated by the topic `Policy`; *Globalization & Sustainable Development*, *History* and *Sociology* by `Society`, and *Cultural Studies* and *Literature* by `Arts`. Interestingly, the cluster *Psychology* (a socioal science) is dominated by the topic `STEM` which typically corresponds to natural sciences e.g. *Biomedial Sciences*, *Computer Science* and *Mathematics*. Also interesting is the fact that the cluster *Economic* is dominated by the topic `Policy`, and not `STEM`. Many people criticize the discipline of economics, saying that it has lost its social-science roots and has become too similar to the disciplines of physics and mathematics. Yet, our topics model indicates that (at UCM at least), economics resembles more the social sciences disciplines (Governance, International Law) than the natural sciences. Finally, I am surprised by the absence of the topic `Academic Skills` from the cluster *Biomedical Sciences*. The cluster contains the courses related to biology, chemistry and medicine and one would expect academic skills such as reseach skills or lab skills to be an integral part of these courses. The absence of the topic `Academic Skills`  reflects the lack of research-related assignments, e.g. research proposal, research paper, essay, etc, in those classes which are heavily dominated by written exam; something the college may want to change.
 
 ```{r, echo = FALSE}
 #
