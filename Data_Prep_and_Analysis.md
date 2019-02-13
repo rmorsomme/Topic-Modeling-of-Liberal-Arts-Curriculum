@@ -1,12 +1,12 @@
 Topic Modeling of Course Content
 ================
 Raphaël Morsomme
-2019-02-11
+2019-02-13
 
 -   [Introduction](#introduction)
 -   [Data preparation](#data-preparation)
     -   [Overview](#overview)
-    -   [Importing](#importing)
+    -   [Importing data](#importing-data)
     -   [Extracting course descriptions from course catalogues](#extracting-course-descriptions-from-course-catalogues)
     -   [Tidy text format](#tidy-text-format)
     -   [Stemming and stop word removal](#stemming-and-stop-word-removal)
@@ -28,7 +28,7 @@ library(tidytext)
 
 library(hunspell)    # Stemmer
 library(topicmodels) # Latent Dirichlet Allocation algorithm
-library(ldatuning)   # finding ideal number of topics for LDA
+library(ldatuning)   # Finding ideal number of topics for LDA
 library(tm)          # Corpus()
 ```
 
@@ -37,11 +37,11 @@ Introduction
 
 University departments often have little knowledge of the content of their study programs. Yet, having a good understanding of what each course of a program covers is paramount to offering an education of quality.
 
-In this script, I analyze the content of the curriculum of the University College Maastricht (UCM), Maastricht University, the Netherlands. UCM offers a bachelor in Liberal Arts and Science. Its curriculum contains over two hundred courses on virtually every topic conceivable - ranging from artificial intelligence to Shakespeare, and terrorism - making it a great subject for this type of analysis.
+In this script, I analyze the content of the curriculum of the University College Maastricht (UCM), Maastricht University, the Netherlands. UCM offers a bachelor in Liberal Arts. Its curriculum contains over two hundred courses on virtually every topic conceivable - ranging from artificial intelligence to Shakespeare, and terrorism - making it a great subject for a content analysis.
 
-To accomplish this, I analyze the course catalogues of the last five years where each of the 200+ courses offered at the college has a one-page description. The analysis is exploratory in nature: instead of answering a specific research question, I explore the textual data to obtain a better understanding of the content of UCM's curriculum.
+To accomplish this, I analyze the course catalogues of the last five years where each course has a one-page description. The analysis is exploratory in nature: instead of answering a specific research question, I explore the textual data in order to obtain a better understanding of the content of UCM's curriculum.
 
-First, with the help of the tf-idf, I identify a series of key words for each courses. The advantage of having key words is that it helps students browse more efficiently through the 200+ courses offered by the college, i.e. have a faster understanding of the content of a course than by reading its one-page description in the catalogue. Second, I compare the catalogues across years to identify themes that have gained and lost importance over time. Finally, with the help of the Latent Dirichlet Allocation algorithm, I fit a topic model to the curriculum which tells us which topics each course covers. The reader can visualize the results of these analyses on the [Shiny App](https://rmorsomme.shinyapps.io/shiny_app/).
+First, with the help of the tf-idf, I identify a series of key words for each courses. Key words would help students browse more efficiently through the 200+ courses offered by the college, i.e. have a faster understanding of the content of a course than by reading the one-page description in the catalogue. Second, I compare the catalogues across years to identify themes that have gained and lost importance over time. Finally, with the help of the Latent Dirichlet Allocation algorithm, I fit a topic model to the curriculum that indicates which topics each course covers. The reader can visualize the results of these analyses on the [Shiny App](https://rmorsomme.shinyapps.io/shiny_app/).
 
 Data preparation
 ================
@@ -49,12 +49,12 @@ Data preparation
 Overview
 --------
 
-We starting by importing the course catalogues and a data set containing information at the course level. We then extract the descriptions of each course from the course catalogues. These descriptions are one to two pages long and form the textual data that we will analyze. Lastly, we transform the data into the *[tidy text format](https://www.tidytextmining.com/tidytext.html)*, stem the terms and remove the stop-words.
+We starting by importing the course catalogues and a data set containing information at the course level. We then extract the description of each course from the course catalogues; this is the textual data that we will analyze. Lastly, we transform these data into the *[tidy text format](https://www.tidytextmining.com/tidytext.html)*, stem the terms and remove the stop-words.
 
-Importing
----------
+Importing data
+--------------
 
-We import two datasets: `corpus`, a corpus containing the five most recent course catalogues of UCM, and `d_course`, a tiblle indicating the code, name and cluster of each course (ourses are distributed among 17 clusters: International Relation, Cultural Studies, Biomedical Science, etc.).
+We import two datasets: `corpus`, a corpus containing the five most recent course catalogues of the college, and `d_course`, a tiblle indicating the code, name and cluster of each course (courses are distributed among 17 clusters e.g. Biomedical Sciences, Cultural Studies, International Relation, etc).
 
 ``` r
 corpus <- Corpus(
@@ -65,17 +65,36 @@ corpus <- Corpus(
 
 ``` r
 d_course <- read_csv(
-  file = "Course.csv",
+  file     = "Course.csv",
   col_type = cols()
   )
+
+print(d_course)
 ```
+
+    ## # A tibble: 191 x 4
+    ##    Code   `Course Title`                         Cluster     Title_short   
+    ##    <chr>  <chr>                                  <chr>       <chr>         
+    ##  1 CAP30~ Capstone                               <NA>        Capstone      
+    ##  2 COR10~ Philosophy of Science                  Philosophy  Philo. of Sci~
+    ##  3 COR10~ Contemporary World History             History     C. W. Hist.   
+    ##  4 COR10~ Political Philosophy                   Philosophy  Political Phi~
+    ##  5 COR10~ Modeling Nature                        Methods     Modeling Natu~
+    ##  6 HUM10~ Cultural Studies I: Doing Cultural St~ Cultural S~ Cult. Studies~
+    ##  7 HUM10~ Introduction to Philosophy             Philosophy  Intro to Philo
+    ##  8 HUM10~ Common Foundations of Law in Europe    Internatio~ Found. Law Eu~
+    ##  9 HUM10~ Introduction to Art; Representations,~ Cultural S~ Intro. to Art 
+    ## 10 HUM10~ Pop Songs and Poetry: Theory and Anal~ Cultural S~ Pop Songs & P~
+    ## # ... with 181 more rows
 
 Extracting course descriptions from course catalogues
 -----------------------------------------------------
 
-We extract the description of each course from the course catalogues. Since the code is a little longish (see appendix) and does not add much to the script, I only show its outcome.
+We extract the description of each course from the course catalogues. Since the code to accomplish this is a little longish (see appendix) and does not add much to the script, I only show its outcome.
 
 ``` r
+#
+# data set with one row per course * year
 print(d_description)
 ```
 
@@ -97,7 +116,7 @@ print(d_description)
 Tidy text format
 ----------------
 
-We save the course descriptions in the [tidy text format](https://www.tidytextmining.com/tidytext.html) with one row per combination of course, year and word
+We save the course descriptions in the [tidy text format](https://www.tidytextmining.com/tidytext.html) with one row per course \* year \* word.
 
 ``` r
 d_description <- unnest_tokens(
@@ -129,14 +148,14 @@ print(d_description)
 Stemming and stop word removal
 ------------------------------
 
-Lastly, we stem the terms and remove the stop words. We use the stemmer `hunspell::hunspell_stem()` to build the stemming function `stem_hunspell()` which, given a term, returns its stem. We prefer the Hunspell stemmer over the usual Snowball stemmer because it offers a more precise stemming.
+Lastly, we stem the terms and remove stop words. We use the stemmer `hunspell::hunspell_stem()` to build the stemming function `my_stemming_f()` which, given a term, returns its most basic stem. We prefer the Hunspell stemmer over the usual Snowball stemmer because it offers a more precise stemming. Finally, we remove words that have little meaning: we remove common stop words, numbers from one to one thousand and a list of our own stop words.
 
-> **Trick: dictionary-based approach.** Since the function `stem_hunspell()` is not vectorized, it takes a very long time to apply it to the `340,000` terms of the data set. We therefore create a dictionary which gives the stem of the `8,500` distinct terms present in `d_description_tidy` and then join it with the original data set.
+> **Trick: dictionary-based approach.** Since the function `my_stemming_f()` is not vectorized, it is painfully slow to apply it to all `340,000` terms of the data set. We therefore create a dictionary that gives the stem of the `8,500` distinct terms present in `d_description_tidy` and then join it with the original data set.
 
 ``` r
 #
 # Stemming function
-stem_hunspell <- function(term) {
+my_stemming_f <- function(term) {
   
   # look up term in dictionary
   stems  <- hunspell_stem(term)[[1]]    
@@ -145,7 +164,7 @@ stem_hunspell <- function(term) {
   # if no stem in dictionary, return original term
   if(n_stem == 0) return(term)
   
-  # otherwise, return last one (most basic)
+  # otherwise, return last stem (most basic one)
   else            return(stems[[n_stem]]) 
   
 }
@@ -162,25 +181,26 @@ my_dictionary <- d_description %>%
   mutate(
     word_stem = purrr::map_chr(
       .x = word,
-      .f = stem_hunspell
+      .f = my_stemming_f
       )
     )
 
 
 #
 # Join dictionary and d_description
-d_description <- my_dictionary %>%
+d_description <- d_description %>%
+  
   full_join(
-  d_description,
-  by = "word"
+    my_dictionary,
+    by = "word"
     ) %>%
+  
   rename(
     word_original = word,
     word          = word_stem
     )
   
 
-  
 #  
 # Remove stop words
 d_description <- d_description %>%
@@ -197,7 +217,7 @@ d_description <- d_description %>%
     )
 
 
-rm(stem_hunspell, my_dictionary)
+rm(my_stemming_f, my_dictionary)
 ```
 
 ``` r
@@ -205,18 +225,18 @@ print(d_description) # See humanities (original) - humanity (stem)
 ```
 
     ## # A tibble: 167,961 x 4
-    ##    word_original word    Code    `Calendar Year`
-    ##    <chr>         <chr>   <chr>   <chr>          
-    ##  1 cor1002       cor1002 COR1002 2014-2015      
-    ##  2 cor1002       cor1002 SSC3023 2014-2015      
-    ##  3 cor1002       cor1002 COR1002 2015-2016      
-    ##  4 cor1002       cor1002 SSC3023 2015-2016      
-    ##  5 cor1002       cor1002 COR1002 2016-2017      
-    ##  6 cor1002       cor1002 SSC3023 2016-2017      
-    ##  7 cor1002       cor1002 COR1002 2017-2018      
-    ##  8 cor1002       cor1002 HUM3051 2017-2018      
-    ##  9 cor1002       cor1002 SSC2067 2017-2018      
-    ## 10 cor1002       cor1002 SSC3023 2017-2018      
+    ##    Code    `Calendar Year` word_original word       
+    ##    <chr>   <chr>           <chr>         <chr>      
+    ##  1 COR1002 2014-2015       cor1002       cor1002    
+    ##  2 COR1002 2014-2015       philosophy    philosophy 
+    ##  3 COR1002 2014-2015       science       science    
+    ##  4 COR1002 2014-2015       coordinator   coordinator
+    ##  5 COR1002 2014-2015       prof          prof       
+    ##  6 COR1002 2014-2015       dr            dr         
+    ##  7 COR1002 2014-2015       boon          boon       
+    ##  8 COR1002 2014-2015       faculty       faculty    
+    ##  9 COR1002 2014-2015       humanities    humanity   
+    ## 10 COR1002 2014-2015       sciences      science    
     ## # ... with 167,951 more rows
 
 Analysis
