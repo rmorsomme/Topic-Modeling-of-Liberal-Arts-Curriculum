@@ -5,6 +5,6 @@ account: rmorsomme
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 638478
-bundleId: 1859996
+bundleId: 1876596
 url: https://rmorsomme.shinyapps.io/shiny_app/
-when: 1549473865.35827
+when: 1550166226.98902
