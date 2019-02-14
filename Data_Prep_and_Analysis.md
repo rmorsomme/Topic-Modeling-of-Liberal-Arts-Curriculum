@@ -1,7 +1,7 @@
 Topic Modeling of Course Content
 ================
 Raphaël Morsomme
-2019-02-13
+2019-02-14
 
 -   [Introduction](#introduction)
 -   [Data preparation](#data-preparation)

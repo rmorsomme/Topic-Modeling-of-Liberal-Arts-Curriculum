@@ -52,8 +52,8 @@ function(input, output) {
         Code
         ) %>%
       top_n(
-        n = 9, 
-        tf_idf
+        n  = 9, 
+        wt = tf_idf
         ) %>%
       arrange(
         desc(tf_idf)
@@ -62,7 +62,7 @@ function(input, output) {
       # normalize tf_idf (better results in word cloud); provide angle
       mutate(
         tf_idf_norm = tf_idf / sum(tf_idf),
-        angle = 10 * sample( 
+        angle       = 10 * sample( 
           x       = -2 : 2, 
           size    = n(),
           replace = TRUE,
@@ -76,7 +76,7 @@ function(input, output) {
         aes(
           size  = tf_idf_norm,
           label = word,
-          color = tf_idf_norm^0.5,
+          color = tf_idf_norm ^ 0.5,
           angle = angle
           )
         ) +
@@ -89,7 +89,7 @@ function(input, output) {
       
       scale_radius(
         range  = c(3.5, 14),
-        limits = c(0, NA)
+        limits = c(0  , NA)
         ) +
       
       scale_color_gradient(
@@ -133,8 +133,8 @@ function(input, output) {
         Cluster
         ) %>%
       top_n(
-        n = 9, 
-        tf_idf
+        n  = 9, 
+        wt = tf_idf
         ) %>%
       arrange(
         desc(tf_idf)
@@ -143,7 +143,7 @@ function(input, output) {
       # normalize tf_idf (better results in word cloud); provide angle
       mutate(
         tf_idf_norm = tf_idf / sum(tf_idf),
-        angle = 10 * sample(
+        angle       = 10 * sample(
           x       = - 2 : 2,
           size    = n(),
           replace = TRUE,
@@ -155,7 +155,7 @@ function(input, output) {
       # plot
       ggplot(
         aes(
-          size = tf_idf_norm,
+          size  = tf_idf_norm,
           label = word,
           angle = angle,
           color = tf_idf_norm^0.5
@@ -170,11 +170,11 @@ function(input, output) {
       
       scale_radius(
         range  = c(3.5, 14),
-        limits = c(0, NA)
+        limits = c(0  , NA)
         ) +
       
       scale_color_gradient(
-        low = "blue", 
+        low  = "blue", 
         high = "red"
         ) +
       
@@ -183,8 +183,8 @@ function(input, output) {
         ) +
       
       theme(
-        panel.background = element_rect(fill = "white"),
-            plot.title = element_text(hjust = 0.5)
+        panel.background = element_rect(fill  = "white"),
+        plot.title       = element_text(hjust = 0.5    )
         )
     
   })
@@ -239,7 +239,7 @@ function(input, output) {
       mutate(
         
         log_odds_ratio = log( ((new + 1) / (sum(new) + 1)) /
-                                ((old + 1) / (sum(old) + 1)) ),
+                              ((old + 1) / (sum(old) + 1)) ),
         
         Trend          = case_when(
           log_odds_ratio < 0 ~ "Declining",
@@ -260,7 +260,7 @@ function(input, output) {
         old + new > 15
         ) %>%
       top_n(
-        n = 50,
+        n  = 50,
         wt = abs(log_odds_ratio)
         ) %>%
       arrange(
@@ -290,8 +290,8 @@ function(input, output) {
         ) +
       
       theme(
-        panel.background = element_rect(fill = "white"),
-        plot.title = element_text(hjust = 0.5)
+        panel.background = element_rect(fill  = "white"),
+        plot.title       = element_text(hjust = 0.5    )
         )
     
   })
@@ -321,9 +321,10 @@ function(input, output) {
         ) %>%
       ungroup %>%
       
+      # plot
       ggplot(
         aes(
-          x = reorder_within(
+          x    = reorder_within(
             x      = term,
             by     = beta,
             within = topic
@@ -364,22 +365,57 @@ function(input, output) {
   output$modelingA_gamma1_plot  <- renderPlot({
     
     get(input$modelingA_ntopic)$gamma %>%
-      mutate(topic = factor(topic)) %>%
-      left_join(d_course, by = c("document" = "Code")) %>%
-      filter(`Course Title` %in% input$modelingA_course,
-             gamma > 1e-3) %>%
+      
+      # take selected courses
+      left_join(
+        d_course,
+        by = c("document" = "Code")
+      ) %>%
+      filter(
+        `Course Title` %in% input$modelingA_course,
+        gamma > 1e-3
+      ) %>%
+      
+      # take top 6 courses per topic
+      mutate(
+        topic = factor(topic)
+        ) %>%
       group_by(topic) %>%
-      top_n(10, gamma) %>%
+      top_n(
+        n  = 6,
+        wt = gamma
+        ) %>%
       ungroup %>%
       
-      ggplot(aes(reorder_within(Title_short, by = gamma, within = topic), y = gamma, fill = topic)) +
-      geom_col(show.legend = FALSE) +
-      facet_wrap(~ topic, scales = "free") +
+      # plot
+      ggplot(
+        aes(
+          x    = reorder_within(
+            x      = Title_short, # use short titles for a better visual outcome
+            by     = gamma, 
+            within = topic
+            ),
+          y    = gamma,
+          fill = topic
+          )
+        ) +
+      geom_col(
+        show.legend = FALSE
+        ) +
+      facet_wrap(
+        ~ topic, 
+        scales = "free"
+        ) +
       scale_x_reordered() +
       coord_flip() +
-      labs(x = NULL, y = "Gamma Distribution") +
+      labs(
+        x = NULL,
+        y = "Gamma Distribution"
+        ) +
       theme_light() +
-      theme(plot.title = element_text(hjust = 0.5))
+      theme(
+        plot.title = element_text(hjust = 0.5)
+        )
     
   })
   
@@ -392,22 +428,59 @@ function(input, output) {
   output$modelingA_gamma2_plot  <- renderPlot({
     
     get(input$modelingA_ntopic)$gamma %>%
-      mutate(topic = factor(topic)) %>%
-      left_join(d_course, by = c("document" = "Code")) %>%
-      filter(`Course Title` %in% input$modelingA_course,
-             gamma > 1e-3) %>%
-      group_by(document) %>%
-      top_n(5, gamma) %>%
+      
+      # take selected courses
+      left_join(
+        d_course, 
+        by = c("document" = "Code")
+      ) %>%
+      filter(
+        `Course Title` %in% input$modelingA_course,
+        gamma > 1e-3
+      ) %>%
+      
+      # take top 6 topics per course
+      mutate(
+        topic = factor(topic)
+        ) %>%
+      group_by(
+        document
+        ) %>%
+      top_n(
+        n  = 6, 
+        wt = gamma
+        ) %>%
       ungroup %>%
       
-      ggplot(aes(reorder_within(topic, by = gamma, within = document), y = gamma, fill = topic)) +
-      geom_col(show.legend = F) +
-      facet_wrap(~ Title_short, scales = "free") +
+      # plot
+      ggplot(
+        aes(
+          x    = reorder_within(
+            x      = topic, 
+            by     = gamma,
+            within = document
+            ),
+          y    = gamma, 
+          fill = topic
+          )
+        ) +
+      geom_col(
+        show.legend = FALSE
+        ) +
+      facet_wrap(
+        ~ Title_short,
+        scales = "free"
+        ) +
       scale_x_reordered() +
       coord_flip() +
-      labs(x = NULL, y = "Gamma Distribution") +
+      labs(
+        x = NULL,
+        y = "Gamma Distribution"
+        ) +
       theme_light() +
-      theme(plot.title = element_text(hjust = 0.5))
+      theme(
+        plot.title = element_text(hjust = 0.5)
+        )
     
   })
   
@@ -422,19 +495,49 @@ function(input, output) {
   output$modelingB_beta_plot  <- renderPlot({
     
     get(input$modelingB_ntopic)$beta %>%
-      group_by(topic) %>%
-      top_n(10, beta) %>%
-      ungroup %>%
-      mutate(topic = factor(topic)) %>%
       
-      ggplot(aes(x = reorder_within(term, by = beta, within = topic), y = beta, fill = topic)) +
-      geom_col(show.legend = F) +
-      facet_wrap(~ topic, scales = "free") +
+      # Take top 10 terms
+      mutate(
+        topic = factor(topic)
+        ) %>%
+      group_by(
+        topic
+        ) %>%
+      top_n(
+        n  = 10,
+        wt = beta
+        ) %>%
+      ungroup %>%
+      
+      # plot
+      ggplot(
+        aes(
+          x    = reorder_within(
+            x      = term,
+            by     = beta, 
+            within = topic
+            ),
+          y    = beta,
+          fill = topic
+          )
+        ) +
+      geom_col(
+        show.legend = FALSE
+        ) +
+      facet_wrap(
+        ~ topic,
+        scales = "free"
+        ) +
       scale_x_reordered() +
-      labs(x = NULL, y = "Beta distribution") +
+      labs(
+        x = NULL,
+        y = "Beta distribution"
+        ) +
       coord_flip() +
       theme_light() +
-      theme(plot.title = element_text(hjust = 0.5))
+      theme(
+        plot.title = element_text(hjust = 0.5)
+        )
     
   })
   
@@ -447,24 +550,70 @@ function(input, output) {
   output$modelingB_gamma1_plot  <- renderPlot({
     
     get(input$modelingB_ntopic)$gamma %>%
-      left_join(d_course, by = c("document" = "Code")) %>%
-      filter(Cluster %in% input$modelingB_cluster) %>%
-      group_by(Cluster, topic) %>%
-      summarise(gamma = sum(gamma)) %>%
-      filter(gamma > 1e-3) %>%
-      group_by(topic) %>%
-      top_n(10, gamma) %>%
-      ungroup %>%
-      mutate(topic = factor(topic)) %>%
       
-      ggplot(aes(reorder_within(Cluster, by = gamma, within = topic), y = gamma, fill = topic)) +
-      geom_col(show.legend = F) +
-      facet_wrap(~ topic, scales = "free") +
+      # take selected clusters
+      left_join(
+        d_course, 
+        by = c("document" = "Code")
+        ) %>%
+      filter(
+        Cluster %in% input$modelingB_cluster
+        ) %>%
+      
+      # aggregate results at cluster level
+      group_by(
+        Cluster,
+        topic
+        ) %>%
+      summarise(
+        gamma = sum(gamma)
+        ) %>%
+      filter(
+        gamma > 1e-3
+        ) %>%
+      
+      # take top 6 clusters per topic
+      mutate(
+        topic = factor(topic)
+        ) %>%
+      group_by(
+        topic
+        ) %>%
+      top_n(
+        n  = 6, 
+        wt = gamma
+        ) %>%
+      ungroup %>%
+      
+      # plot
+      ggplot(
+        aes(
+          x     = reorder_within(
+            x      = Cluster,
+            by     = gamma, 
+            within = topic
+            ), 
+          y    = gamma,
+          fill = topic
+          )
+        ) +
+      geom_col(
+        show.legend = FALSE
+        ) +
+      facet_wrap(
+        ~ topic,
+        scales = "free"
+        ) +
       scale_x_reordered() +
       coord_flip() +
-      labs(x = NULL, y = "Gamma Distribution") +
+      labs(
+        x = NULL,
+        y = "Gamma Distribution"
+        ) +
       theme_light() +
-      theme(plot.title = element_text(hjust = 0.5))
+      theme(
+        plot.title = element_text(hjust = 0.5)
+        )
     
   })
   # Modeling B: gamma2
@@ -476,24 +625,70 @@ function(input, output) {
   output$modelingB_gamma2_plot  <- renderPlot({
     
     get(input$modelingB_ntopic)$gamma %>%
-      mutate(topic = factor(topic)) %>%
-      left_join(d_course, by = c("document" = "Code")) %>%
-      filter(Cluster %in% input$modelingB_cluster) %>%
-      group_by(Cluster, topic) %>%
-        summarise(gamma = sum(gamma)) %>%
-        filter(gamma > 1e-2) %>%
-      group_by(Cluster) %>%
-        top_n(5, gamma) %>%
+      
+      # take selected clusters
+      left_join(
+        d_course,
+        by = c("document" = "Code")
+        ) %>%
+      filter(
+        Cluster %in% input$modelingB_cluster
+        ) %>%
+      
+      # aggregate results at cluster level
+      group_by(
+        Cluster,
+        topic
+        ) %>%
+      summarise(
+        gamma = sum(gamma)
+        ) %>%
+      filter(
+        gamma > 1e-3
+        ) %>%
+      
+      # take top 6 topics per cluster
+      mutate(
+        topic = factor(topic)
+        ) %>%
+      group_by(
+        Cluster
+        ) %>%
+      top_n(
+        n  = 5,
+        wt = gamma
+        ) %>%
       ungroup %>%
       
-      ggplot(aes(reorder_within(topic, by = gamma, within = Cluster), y = gamma, fill = topic)) +
-      geom_col(show.legend = F) +
-      facet_wrap(~ Cluster, scales = "free") +
+      # plot
+      ggplot(
+        aes(
+          x     = reorder_within(
+            x      = topic,
+            by     = gamma,
+            within = Cluster
+            ),
+          y = gamma,
+          fill = topic
+          )
+        ) +
+      geom_col(
+        show.legend = FALSE
+        ) +
+      facet_wrap(
+        ~ Cluster,
+        scales = "free"
+        ) +
       scale_x_reordered() +
       coord_flip() +
-      labs(x = NULL, y = "Gamma Distribution") +
+      labs(
+        x = NULL, 
+        y = "Gamma Distribution"
+        ) +
       theme_light() +
-      theme(plot.title = element_text(hjust = 0.5))
+      theme(
+        plot.title = element_text(hjust = 0.5)
+        )
     
   })
   
