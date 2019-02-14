@@ -40,24 +40,71 @@ function(input, output) {
   output$tfidfA_WC <- renderPlot({
     
     tf_idf %>%
-      filter(`Course Title` %in% input$tfidfA_course, 
-             n >= 2) %>%
-      group_by(Code) %>%
-      top_n(9, tf_idf) %>%
-      mutate(tf_idf_norm = tf_idf / sum(tf_idf), # normalization for better results in wordcloud
-             angle = 10 * sample(-2:2, n(), replace = TRUE, prob = c(1,1,4,1,1))) %>%
+      
+      # keep selected courses
+      filter(
+        `Course Title` %in% input$tfidfA_course,
+        n >= 2
+        ) %>%
+      
+      # take top 9 terms per course
+      group_by(
+        Code
+        ) %>%
+      top_n(
+        n = 9, 
+        tf_idf
+        ) %>%
+      arrange(
+        desc(tf_idf)
+      ) %>%
+      
+      # normalize tf_idf (better results in word cloud); provide angle
+      mutate(
+        tf_idf_norm = tf_idf / sum(tf_idf),
+        angle = 10 * sample( 
+          x       = -2 : 2, 
+          size    = n(),
+          replace = TRUE,
+          prob    = c(1, 1, 4, 1, 1)
+          )
+        ) %>%
       ungroup %>%
       
-      ggplot(aes(size = order(tf_idf_norm^0.7, tf_idf_norm), label = word,
-                 angle = angle, color = tf_idf_norm^0.7)) +
-      geom_text_wordcloud_area(area_corr_power = 1,
-                               eccentricity    = 1,
-                               rm_outside      = T) +
-      scale_radius(range = c(3, 7), limits = c(0, NA)) +
-      scale_color_gradient(low = "red", high = "blue") +
-      facet_wrap(~ Title_short) +
-      theme(panel.background = element_rect(fill = "white"),
-            plot.title = element_text(hjust = 0.5))
+      # plot
+      ggplot(
+        aes(
+          size  = tf_idf_norm,
+          label = word,
+          color = tf_idf_norm^0.5,
+          angle = angle
+          )
+        ) +
+      
+      geom_text_wordcloud_area(
+        area_corr_power = 1,
+        eccentricity    = 1,
+        rm_outside      = TRUE
+        ) +
+      
+      scale_radius(
+        range  = c(3.5, 14),
+        limits = c(0, NA)
+        ) +
+      
+      scale_color_gradient(
+        low = "blue", 
+        high = "red"
+        ) +
+      
+      facet_wrap(
+        ~ Title_short
+        ) +
+      
+      theme(
+        panel.background = element_rect(fill = "white"),
+        plot.title = element_text(hjust = 0.5)
+        )
     
   })
   
@@ -74,23 +121,71 @@ function(input, output) {
   output$tfidfB_WC <- renderPlot({
     
     tf_idf_cluster %>%
-      filter(n >= 5,
-             Cluster %in% input$tfidfB_cluster) %>%
-      group_by(Cluster) %>%
-      top_n(9, tf_idf) %>%
-      mutate(tf_idf_norm = tf_idf / sum(tf_idf), # normalization for better results in wordcloud
-             angle = 10 * sample(-2:2, n(), replace = T, prob = c(1,1,4,1,1))) %>%
+      
+      # keep selected cluster
+      filter(
+        Cluster %in% input$tfidfB_cluster,
+        n >= 5
+        ) %>%
+      
+      # take top 9 terms per cluster
+      group_by(
+        Cluster
+        ) %>%
+      top_n(
+        n = 9, 
+        tf_idf
+        ) %>%
+      arrange(
+        desc(tf_idf)
+        ) %>%
+      
+      # normalize tf_idf (better results in word cloud); provide angle
+      mutate(
+        tf_idf_norm = tf_idf / sum(tf_idf),
+        angle = 10 * sample(
+          x       = - 2 : 2,
+          size    = n(),
+          replace = TRUE,
+          prob    = c(1, 1, 4, 1, 1)
+          )
+        ) %>%
       ungroup %>%
       
-      ggplot(aes(size = order(tf_idf_norm^0.7, tf_idf_norm), label = word, angle = angle, color = tf_idf_norm^0.7)) +
-      geom_text_wordcloud_area(area_corr_power = 1,
-                               eccentricity    = 1,
-                               rm_outside      = T) +
-      scale_radius(range = c(3, 6), limits = c(0, NA)) +
-      scale_color_gradient(low = "red", high = "blue") +
-      facet_wrap(~ Cluster) +
-      theme(panel.background = element_rect(fill = "white"),
-            plot.title = element_text(hjust = 0.5))
+      # plot
+      ggplot(
+        aes(
+          size = tf_idf_norm,
+          label = word,
+          angle = angle,
+          color = tf_idf_norm^0.5
+          )
+        ) +
+      
+      geom_text_wordcloud_area(
+        area_corr_power = 1,
+        eccentricity    = 1,
+        rm_outside      = TRUE
+        ) +
+      
+      scale_radius(
+        range  = c(3.5, 14),
+        limits = c(0, NA)
+        ) +
+      
+      scale_color_gradient(
+        low = "blue", 
+        high = "red"
+        ) +
+      
+      facet_wrap(
+        ~ Cluster
+        ) +
+      
+      theme(
+        panel.background = element_rect(fill = "white"),
+            plot.title = element_text(hjust = 0.5)
+        )
     
   })
   
@@ -99,7 +194,12 @@ function(input, output) {
   # Topic emergence: title
   output$Emergence_title <- renderText({
     
-    paste("Emerging (blue) and Declining (red) Terms Between", input$emergence_year_old, "and", input$emergence_year_recent)
+    paste(
+      "Emerging (blue) and Declining (red) Terms Between",
+      input$emergence_year_old,
+      "and", 
+      input$emergence_year_recent
+      )
     
   })
   
@@ -107,26 +207,92 @@ function(input, output) {
   output$Emergence_WC <- renderPlot({
     
     d_description %>%
-      filter(`Calendar Year` %in% c(input$emergence_year_old, input$emergence_year_recent)) %>%
-      count(`Calendar Year`, `word`) %>%
-      spread(key = `Calendar Year`, value = n, fill = 0) %>%
-      rename(old = input$emergence_year_old, new = input$emergence_year_recent) %>%
-      mutate(n         = old + new,
-             `Log Ratio` = log( ((new+1) / (sum(new)+1)) /
-                                  ((old+1) / (sum(old)+1)) ),
-             Trend     = case_when(`Log Ratio`<0 ~ "Declining",
-                                   `Log Ratio`>0 ~ "Emerging")) %>%
-      filter(n > 15) %>%
-      top_n(50, abs(`Log Ratio`)) %>%
-      mutate(angle = 10 * sample(-2:2, n(), replace = T, prob = c(1,1,4,1,1))) %>%
       
-      ggplot(aes(size = abs(`Log Ratio`), label = word, angle = angle, color = Trend, angle_group = `Log Ratio` < 0)) +
-      geom_text_wordcloud_area(area_corr_power = 1,
-                               eccentricity    = 1,
-                               rm_outside      = T) +
-      scale_radius(range = c(3, 14), limits = c(0, NA)) +
-      theme(panel.background = element_rect(fill = "white"),
-            plot.title = element_text(hjust = 0.5))
+      # keep selected years
+      filter(
+        `Calendar Year` %in% c(
+          input$emergence_year_old, 
+          input$emergence_year_recent
+          )
+        ) %>%
+      
+      # frequency per year
+      count(
+        `Calendar Year`, 
+        `word`
+        ) %>%
+      
+      # spread along year
+      spread(
+        key   = `Calendar Year`,
+        value = n, 
+        fill  = 0
+        ) %>%
+      
+      # rename variables for convenience
+      rename(
+        old = input$emergence_year_old, 
+        new = input$emergence_year_recent
+        ) %>%
+      
+      # log odds ratio (and other variables)
+      mutate(
+        
+        log_odds_ratio = log( ((new + 1) / (sum(new) + 1)) /
+                                ((old + 1) / (sum(old) + 1)) ),
+        
+        Trend          = case_when(
+          log_odds_ratio < 0 ~ "Declining",
+          log_odds_ratio > 0 ~ "Emerging"
+          ),
+        
+        angle = 10 * sample(
+          x       = - 2 : 2,
+          size    = n(),
+          replace = TRUE,
+          prob    = c(1, 1, 4, 1, 1)
+          )
+        
+        ) %>%
+      
+      # take top 50 words (absolute value)
+      filter(
+        old + new > 15
+        ) %>%
+      top_n(
+        n = 50,
+        wt = abs(log_odds_ratio)
+        ) %>%
+      arrange(
+        abs(log_odds_ratio)
+      ) %>%
+      
+      # Plot
+      ggplot(
+        aes(
+          size        = abs(log_odds_ratio),
+          label       = word,
+          angle       = angle, 
+          color       = Trend,
+          angle_group = log_odds_ratio < 0
+          )
+        ) +
+      
+      geom_text_wordcloud_area(
+        area_corr_power = 1,
+        eccentricity    = 1.25,
+        rm_outside      = TRUE
+        ) +
+      
+      scale_radius(
+        range  = c(5, 20), 
+        limits = c(0, NA)
+        ) +
+      
+      theme(
+        panel.background = element_rect(fill = "white"),
+        plot.title = element_text(hjust = 0.5)
+        )
     
   })
   
@@ -141,19 +307,51 @@ function(input, output) {
   output$modelingA_beta_plot  <- renderPlot({
     
     get(input$modelingA_ntopic)$beta %>%
-      mutate(topic = factor(topic)) %>%
-      group_by(topic) %>%
-      top_n(10, beta) %>%
+      
+      # take top 10 terms
+      mutate(
+        topic = factor(topic)
+        ) %>%
+      group_by(
+        topic
+        ) %>%
+      top_n(
+        n  = 10,
+        wt = beta
+        ) %>%
       ungroup %>%
       
-      ggplot(aes(x = reorder_within(term, by = beta, within = topic), y = beta, fill = topic)) +
-      geom_col(show.legend = F) +
-      facet_wrap(~ topic, scales = "free") +
+      ggplot(
+        aes(
+          x = reorder_within(
+            x      = term,
+            by     = beta,
+            within = topic
+            ),
+          y    = beta,
+          fill = topic
+          )
+        ) +
+      
+      geom_col(
+        show.legend = FALSE
+        ) +
+      
+      facet_wrap(
+        ~ topic, 
+        scales = "free"
+        ) +
       scale_x_reordered() +
-      labs(x = NULL, y = "Beta distribution") +
+      
+      labs(
+        x = NULL, 
+        y = "Beta distribution"
+        ) +
       coord_flip() +
       theme_light() +
-      theme(plot.title = element_text(hjust = 0.5))
+      theme(
+        plot.title = element_text(hjust = 0.5)
+        )
     
   })
   

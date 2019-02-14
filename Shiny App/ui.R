@@ -1,29 +1,18 @@
 
+#
 # Setup ####
+
 library(shiny)
 library(tidyverse)
 load("results_data.RDATA")
 
-# Functions for ordering bars within facet in ggplot.
-# From: https://github.com/dgrtwo/drlib/blob/master/R/reorder_within.R
-reorder_within <- function(x, by, within, fun = mean, sep = "___", ...) {
-  new_x <- paste(x, within, sep = sep)
-  stats::reorder(new_x, by, FUN = fun)
-}
-
-scale_x_reordered <- function(..., sep = "___") {
-  reg <- paste0(sep, ".+$")
-  ggplot2::scale_x_discrete(labels = function(x) gsub(reg, "", x), ...)
-}
-
-scale_y_reordered <- function(..., sep = "___") {
-  reg <- paste0(sep, ".+$")
-  ggplot2::scale_y_discrete(labels = function(x) gsub(reg, "", x), ...)
-}
-
-
 #
-# Default Course (9)
+# For convenience
+
+course_all  <- sort(unique(tf_idf$`Course Title`))
+
+cluster_all <- sort(unique(d_course$Cluster))
+
 course_default <- d_course %>%
   filter(
     Code %in% c(
@@ -36,20 +25,23 @@ course_default <- d_course %>%
     `Course Title`
     )
 
+cluster_default <- cluster_all[1 : 13]
+
 
 
 #
-# UI
+# UI ####
+
 navbarPage(
   
   # App title
-  "Results",
+  title = "Results",
   
   # Panel 1 for tf-idf ####
   navbarMenu(
     
     # Panel title
-    title = "Important Terms",
+    title = "Key Words",
     
     # Subpanel 1.1: tf-idf - course
     tabPanel(
@@ -65,30 +57,36 @@ navbarPage(
           
           # Input: button for Courses
           selectizeInput(
-            inputId = "tfidfA_course",
-            label = "Courses (max 16)",
-            choice = sort(unique(tf_idf$`Course Title`)),
+            inputId  = "tfidfA_course",
+            label    = "Courses (max 16)",
+            choice   = course_all,
             selected = course_default,
             multiple = TRUE,
-            options = list(maxItems = 16)
-          )
+            options  = list(maxItems = 16)
+            )
           
-        ),
+          ),
         
         # Main panel (output)
         mainPanel(
           
           # Output: Title of plots
-          h3(textOutput(outputId = "tfidfA_title"), align = "center"),
+          h3(
+            textOutput(outputId = "tfidfA_title"),
+            align = "center"
+            ),
           
           # Output: Word cloud
-          plotOutput(outputId = "tfidfA_WC", height = "600px")
+          plotOutput(
+            outputId = "tfidfA_WC",
+            height = "600px"
+            )
           
-        )
+          )
         
-      )
+        )
       
-    ),
+      ),
     
     # Subpanel 1.2 tf-idf - Cluster
     tabPanel(
@@ -104,32 +102,38 @@ navbarPage(
           
           # Input: button for Courses
           selectizeInput(
-            inputId = "tfidfB_cluster",
-            label = "Cluster (max 16)",
-            choice = sort(unique(tf_idf$Cluster)),
-            selected = unique(tf_idf$Cluster)[1 : 10],
+            inputId  = "tfidfB_cluster",
+            label    = "Cluster (max 16)",
+            choice   = cluster_all,
+            selected = cluster_default,
             multiple = TRUE,
-            options = list(maxItems = 16)
-          )
+            options  = list(maxItems = 16)
+            )
           
-        ),
+          ),
         
         # Main panel (output)
         mainPanel(
           
           # Output: Title of plots
-          h3(textOutput(outputId = "tfidfB_title"), align = "center"),
+          h3(
+            textOutput(outputId = "tfidfB_title"),
+            align = "center"
+            ),
           
           # Output: Word cloud
-          plotOutput(outputId = "tfidfB_WC", height = "600px")
+          plotOutput(
+            outputId = "tfidfB_WC",
+            height = "600px"
+            )
           
-        )
+          )
         
-      )
+        )
       
-    )
+      )
     
-  ),
+    ),
   
   # Panel 2 for term emergence ####
   tabPanel(
@@ -160,27 +164,33 @@ navbarPage(
             selected = "2018-2019"
             )
           
-        ),
+          ),
         
         # Main panel (output)
         mainPanel(
           
           # Output: Title of plots
-          h3(textOutput(outputId = "Emergence_title"), align = "center"),
+          h3(
+            textOutput(outputId = "Emergence_title"), 
+            align = "center"
+            ),
           
           # Output: Word Cloud
-          plotOutput(outputId = "Emergence_WC", height = "600px")
+          plotOutput(
+            outputId = "Emergence_WC", 
+            height = "600px"
+            )
           
-        )
+          )
         
-      )
+        )
       
-    )
+      )
     
-  ),
+    ),
   
   
-  # Panel 3 for topic modeling ----
+  # Panel 3 for topic modeling ####
   navbarMenu(
     
     # Panel title
@@ -201,23 +211,23 @@ navbarPage(
           # Input: button for number of topics
           radioButtons(
             inputId = "modelingA_ntopic",
-            label = "Number of Topics",
-            choices = c("5 (labeled topics)"     = "LDA_5" ,
+            label   = "Number of Topics",
+            choices = c("5 (labeled topics)"    = "LDA_5" ,
                         "25 (unlabeled topics)" = "LDA_25"),
-            select = "LDA_5"
-          ),
+            select  = "LDA_5"
+            ),
           
           # Input: button for Courses
           selectizeInput(
             inputId = "modelingA_course",
             label = "Courses (max 16)",
-            choice = sort(unique(tf_idf$`Course Title`)),
+            choice = course_all,
             selected = course_default,
             multiple = TRUE,
             options = list(maxItems = 16)
-          )
+            )
           
-        ),
+          ),
         
         # Main panel (output)
         mainPanel(
@@ -226,23 +236,56 @@ navbarPage(
           tabsetPanel(
             
             type = "tabs",
-                      
+            
+            # Tab 1: Key words per topic       
             tabPanel(
-              title = "Key Words of Each Topic", 
-              h4(textOutput(outputId = "modelingA_beta_title"), align = "center"),
-              plotOutput(outputId = "modelingA_beta_plot", height = "600px")
+              
+              title = "Key Words of Each Topic",
+              
+              h4(
+                textOutput(outputId = "modelingA_beta_title"), 
+                align = "center"
+                ),
+              
+              plotOutput(
+                outputId = "modelingA_beta_plot", 
+                height = "600px"
+                )
+              
               ),
             
+            # Tab 2: main courses per topic
             tabPanel(
+              
               title = "Main Courses of Each Topic", 
-              h4(textOutput(outputId = "modelingA_gamma1_title"), align = "center"),
-              plotOutput(outputId = "modelingA_gamma1_plot", height = "600px")
+              
+              h4(
+                textOutput(outputId = "modelingA_gamma1_title"),
+                align = "center"
+                ),
+              
+              plotOutput(
+                outputId = "modelingA_gamma1_plot",
+                height = "600px"
+                )
+              
               ),
             
+            # Tab 3: main topic per course
             tabPanel(
+              
               title = "Main Topics per Courses",
-              h4(textOutput(outputId = "modelingA_gamma2_title"), align = "center"),
-              plotOutput(outputId = "modelingA_gamma2_plot", height = "600px")
+              
+              h4(
+                textOutput(outputId = "modelingA_gamma2_title"),
+                align = "center"
+                ),
+              
+              plotOutput(
+                outputId = "modelingA_gamma2_plot",
+                height = "600px"
+                )
+              
               )
             
             )
@@ -268,23 +311,23 @@ navbarPage(
           # Input: button for number of topics
           radioButtons(
             inputId = "modelingB_ntopic",
-            label = "Number of Topics",
+            label   = "Number of Topics",
             choices = c("5 (labeled topics)"    = "LDA_5" ,
                         "25 (unlabeled topics)" = "LDA_25"),
-            select = "LDA_5"
-          ),
+            select  = "LDA_5"
+            ),
           
           # Input: button for Courses
           selectizeInput(
-            inputId = "modelingB_cluster",
-            label = "Cluster (max 16)",
-            choice = sort(unique(d_course$Cluster[!is.na(d_course$Cluster)])),
-            selected = unique(d_course$Cluster[!is.na(d_course$Cluster)])[1 : 16],
+            inputId  = "modelingB_cluster",
+            label    = "Cluster (max 16)",
+            choice   = cluster_all,
+            selected = cluster_default,
             multiple = TRUE,
-            options = list(maxItems = 16)
-          )
+            options  = list(maxItems = 16)
+            )
           
-        ),
+          ),
         
         
         # Main panel (output)
@@ -295,32 +338,65 @@ navbarPage(
             
             type = "tabs",
             
+            # Tab 1: key words per topic
             tabPanel(
+              
               title = "Key Words of Each Topic", 
-              h4(textOutput(outputId = "modelingB_beta_title"), align = "center"),
-              plotOutput(outputId = "modelingB_beta_plot", height = "600px")
+              
+              h4(
+                textOutput(outputId = "modelingB_beta_title"),
+                align = "center"
+                ),
+              
+              plotOutput(
+                outputId = "modelingB_beta_plot", 
+                height = "600px"
+                )
+              
             ),
             
+            # Tab 2: main cluster per topic
             tabPanel(
+              
               title = "Main Clusters of Each Topic", 
-              h4(textOutput(outputId = "modelingB_gamma1_title"), align = "center"),
-              plotOutput(outputId = "modelingB_gamma1_plot", height = "600px")
-            ),
+              
+              h4(
+                textOutput(outputId = "modelingB_gamma1_title"),
+                align = "center"
+                ),
+              
+              plotOutput(
+                outputId = "modelingB_gamma1_plot",
+                height = "600px"
+                )
+              
+              ),
             
+            # Tab 3: main topics per cluster
             tabPanel(
+              
               title = "Main Topics per Clusters",
-              h4(textOutput(outputId = "modelingB_gamma2_title"), align = "center"),
-              plotOutput(outputId = "modelingB_gamma2_plot", height = "600px")
-            )
+              
+              h4(
+                textOutput(outputId = "modelingB_gamma2_title"),
+                align = "center"
+                ),
+              
+              plotOutput(
+                outputId = "modelingB_gamma2_plot",
+                height = "600px"
+                )
+              
+              )
             
-          )
+            )
           
-        )
+          )
         
-      )
+        )
       
-    )
+      )
     
-  )
+    )
   
-)
+  )
