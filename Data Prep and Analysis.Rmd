@@ -444,9 +444,6 @@ LDA_5 = list(
     # assign labels to the topics
     mutate(
       topic = label
-      ) %>%
-    select(
-      - label
       ),
   
   gamma  = tidy(LDA_5, matrix = "gamma") %>%
@@ -460,9 +457,6 @@ LDA_5 = list(
     # assign labels to the topics
     mutate(
       topic = label
-      ) %>%
-    select(
-      - label
       )
   
   )
