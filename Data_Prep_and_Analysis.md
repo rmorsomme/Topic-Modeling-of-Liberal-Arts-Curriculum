@@ -1,7 +1,7 @@
 Topic Modeling of Course Content
 ================
 Raphaël Morsomme
-2019-02-14
+2019-02-15
 
 -   [Introduction](#introduction)
 -   [Data preparation](#data-preparation)
@@ -220,7 +220,14 @@ d_description <- d_description %>%
     # remove own stop words
     !word %in% c(
       "student", 
-      "study"
+      "study",
+      "eleum",
+      "portal",
+      "maastricht",
+      "lecture",
+      "cuss",
+      "tutorial",
+      "topic"
       )
     
     )
@@ -233,7 +240,7 @@ rm(my_stemming_f, my_dictionary)
 print(d_description) # See humanities (original) - humanity (stem)
 ```
 
-    ## # A tibble: 167,961 x 4
+    ## # A tibble: 164,081 x 4
     ##    Code    `Calendar Year` word_original word       
     ##    <chr>   <chr>           <chr>         <chr>      
     ##  1 COR1002 2014-2015       cor1002       cor1002    
@@ -246,7 +253,7 @@ print(d_description) # See humanities (original) - humanity (stem)
     ##  8 COR1002 2014-2015       faculty       faculty    
     ##  9 COR1002 2014-2015       humanities    humanity   
     ## 10 COR1002 2014-2015       sciences      science    
-    ## # ... with 167,951 more rows
+    ## # ... with 164,071 more rows
 
 Analysis
 ========
@@ -292,20 +299,20 @@ tf_idf <- d_description %>%
 print(tf_idf)
 ```
 
-    ## # A tibble: 23,790 x 9
+    ## # A tibble: 23,238 x 9
     ##    Code  word      n     tf   idf tf_idf `Course Title` Cluster Title_short
     ##    <chr> <chr> <int>  <dbl> <dbl>  <dbl> <chr>          <chr>   <chr>      
-    ##  1 SSC3~ poli~    34 0.0783  1.82  0.142 Public Policy~ Govern~ Public Pol~
-    ##  2 UGR3~ sear~    30 0.106   1.02  0.108 Undergraduate~ Methods Undergradu~
-    ##  3 PRO1~ sear~    27 0.117   1.02  0.119 Research Proj~ Methods Research P~
-    ##  4 SKI3~ conf~    26 0.0762  4.05  0.309 Preparing Con~ Skills  Preparing ~
-    ##  5 SSC2~ law      26 0.124   2.10  0.262 Law and Socie~ Sociol~ Law and So~
-    ##  6 SSC2~ conf~    26 0.102   2.26  0.230 Conflict Reso~ Int. R~ Conflict R~
-    ##  7 SSC3~ trade    26 0.0539  3.54  0.191 International~ Intern~ Internatio~
-    ##  8 HUM2~ memo~    25 0.0617  3.36  0.207 Cultural Reme~ Cultur~ Cult. Reme~
-    ##  9 SKI2~ argu~    25 0.102   2.51  0.255 Argumentation~ Skills  Arg. I     
-    ## 10 SSC2~ publ~    25 0.115   1.97  0.226 Public Health~ Govern~ Public Hea~
-    ## # ... with 23,780 more rows
+    ##  1 SSC3~ poli~    34 0.0798  1.82  0.145 Public Policy~ Govern~ Public Pol~
+    ##  2 UGR3~ sear~    30 0.108   1.02  0.111 Undergraduate~ Methods Undergradu~
+    ##  3 PRO1~ sear~    27 0.118   1.02  0.121 Research Proj~ Methods Research P~
+    ##  4 SKI3~ conf~    26 0.0778  4.05  0.315 Preparing Con~ Skills  Preparing ~
+    ##  5 SSC2~ law      26 0.128   2.10  0.269 Law and Socie~ Sociol~ Law and So~
+    ##  6 SSC2~ conf~    26 0.105   2.26  0.238 Conflict Reso~ Int. R~ Conflict R~
+    ##  7 SSC3~ trade    26 0.0550  3.54  0.194 International~ Intern~ Internatio~
+    ##  8 HUM2~ memo~    25 0.0622  3.36  0.209 Cultural Reme~ Cultur~ Cult. Reme~
+    ##  9 SKI2~ argu~    25 0.104   2.51  0.260 Argumentation~ Skills  Arg. I     
+    ## 10 SSC2~ publ~    25 0.117   1.97  0.230 Public Health~ Govern~ Public Hea~
+    ## # ... with 23,228 more rows
 
 ``` r
 #
@@ -424,11 +431,11 @@ FindTopicsNumber_plot(results_n_topics[c(1, 3 : 5)])
 # we do not include Griffiths2004 because it produces NaN for some reason.
 ```
 
-`Deveaud2014` is uninformative in our case. `CaoJuan2009` and `Arun2010` indicate that a topic model with between `25` and `45` topics offers a good fit of the data.
+`Deveaud2014` is uninformative in our case. `CaoJuan2009` and `Arun2010` indicate that a topic model with `35` topics offers the best fit of the data.
 
 ### Fitting the topic model
 
-For parsimony sake and in order to visualize the results more easily, we fit a model with `25` topics. For illustration, we also fit a model with `5` topics which we label by hand.
+To visualize the results more easily, we fit a model with `25` topics. For illustrative purposes, we also fit a model with `5` topics which we label by hand.
 
 ``` r
 #

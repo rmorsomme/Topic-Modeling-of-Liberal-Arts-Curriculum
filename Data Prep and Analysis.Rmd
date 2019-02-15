@@ -209,7 +209,14 @@ d_description <- d_description %>%
     # remove own stop words
     !word %in% c(
       "student", 
-      "study"
+      "study",
+      "eleum",
+      "portal",
+      "maastricht",
+      "lecture",
+      "cuss",
+      "tutorial",
+      "topic"
       )
     
     )
@@ -368,10 +375,10 @@ FindTopicsNumber_plot(results_n_topics[c(1, 3 : 5)])
 # we do not include Griffiths2004 because it produces NaN for some reason.
 ```
 
-`Deveaud2014` is uninformative in our case. `CaoJuan2009` and `Arun2010` indicate that a topic model with between `25` and `45` topics offers a good fit of the data.
+`Deveaud2014` is uninformative in our case. `CaoJuan2009` and `Arun2010` indicate that a topic model with `35` topics offers the best fit of the data.
 
 ### Fitting the topic model
-For parsimony sake and in order to visualize the results more easily, we fit a model with `25` topics. For illustration, we also fit a model with `5` topics which we label by hand.
+To visualize the results more easily, we fit a model with `25` topics. For illustrative purposes, we also fit a model with `5` topics which we label by hand.
 
 ```{r fitting LDA 25, cache = TRUE}
 #
@@ -417,7 +424,7 @@ Interestingly, the third plot also shows that the cluster `Psychology` (a social
 
 ```{r, echo = FALSE}
 #
-# Create labels
+# Create topic labels
 labels <- tibble(
   topic = 1 : 5,
   label = c(
@@ -462,8 +469,10 @@ LDA_5 = list(
   )
 
 
-LDA_25 = list(beta  = tidy(LDA_25, matrix = "beta"),
-              gamma = tidy(LDA_25, matrix = "gamma"))
+LDA_25 = list(
+  beta  = tidy(LDA_25, matrix = "beta"),
+  gamma = tidy(LDA_25, matrix = "gamma")
+  )
 
 save(
   
@@ -480,7 +489,6 @@ save(
   file = "Shiny App/results_data.RDATA"
   
   )
-
 ```
 
 # Conclusion

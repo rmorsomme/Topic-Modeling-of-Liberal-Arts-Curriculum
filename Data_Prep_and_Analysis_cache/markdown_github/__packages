@@ -11,7 +11,7 @@ forcats
 tidytext
 hunspell
 topicmodels
+ldatuning
 NLP
 tm
 bindrcpp
-ldatuning
