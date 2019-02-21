@@ -340,7 +340,7 @@ my_control <- list(
 ```
 
 
-```{r LDA n topics, cache = TRUE, eval = F}
+```{r LDA n topics, cache = TRUE}
 
 #
 # Simulations
@@ -381,7 +381,7 @@ FindTopicsNumber_plot(results_n_topics[c(1, 3 : 5)])
 ### Fitting the topic model
 To visualize the results more easily, we fit a model with `25` topics. For illustrative purposes, we also fit a model with `5` topics which we label by hand.
 
-```{r fitting LDA 25, cache = TRUE, eval = F}
+```{r fitting LDA 25, cache = TRUE}
 #
 # 25 topics (ideal number of topics)
 LDA_25  <- LDA(
@@ -471,8 +471,8 @@ LDA_5 = list(
 
 
 LDA_25 = list(
- # beta  = tidy(LDA_25, matrix = "beta"),
-  #gamma = tidy(LDA_25, matrix = "gamma")
+  beta  = tidy(LDA_25, matrix = "beta"),
+  gamma = tidy(LDA_25, matrix = "gamma")
   )
 
 save(
@@ -484,7 +484,7 @@ save(
   d_description,
   
   # Topic modeling
-  d_course, LDA_5,  #LDA_25,
+  d_course, LDA_5,  LDA_25,
   
   # File name
   file = "Shiny App/results_data.RDATA"
