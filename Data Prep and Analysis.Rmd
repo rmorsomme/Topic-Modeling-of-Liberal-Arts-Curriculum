@@ -9,6 +9,11 @@ editor_options:
   chunk_output_type: console
 ---
 
+```{r setup, include = T}
+knitr::opts_chunk$set(cache.path = "Cache/")
+```
+
+
 ```{r library, message = FALSE}
 library(tidyverse)
 library(tidytext)
@@ -37,14 +42,14 @@ We import two datasets: `corpus`, a corpus containing the five most recent cours
 
 ```{r import corpus, cache = TRUE}
 corpus <- Corpus(
-  x             = DirSource("Catalogues"),
+  x             = DirSource("Input Data/Catalogues"),
   readerControl = list(reader = readPDF(control = list(text = "-layout")))
   )
 ```
 
 ```{r import d_course}
 d_course <- read_csv(
-  file     = "Course.csv",
+  file     = "Input Data/Course.csv",
   col_type = cols()
   )
 
@@ -209,14 +214,7 @@ d_description <- d_description %>%
     # remove own stop words
     !word %in% c(
       "student", 
-      "study",
-      "eleum",
-      "portal",
-      "maastricht",
-      "lecture",
-      "cuss",
-      "tutorial",
-      "topic"
+      "study"
       )
     
     )
@@ -324,7 +322,7 @@ d_cast <- d_description %>%
     )
 ```
 
-```{r LDA n topics, cache = TRUE}
+```{r Gibbs control}
 
 #
 # Parameters of Gibbs optimizer
@@ -335,11 +333,14 @@ my_control <- list(
   best    = TRUE,
   
   burnin  = 500,
-  iter    = 2000,
+  iter    = 5000,
   thin    = 100
   
   )
+```
 
+
+```{r LDA n topics, cache = TRUE, eval = F}
 
 #
 # Simulations
@@ -348,7 +349,7 @@ results_n_topics <- d_cast %>%
   FindTopicsNumber(
     
     # Number of topics tried
-    topics = seq(5, 95, by = 5),
+    topics = seq(5, 75, by = 5),
   
     # metrics considered
     metrics = c(
@@ -365,12 +366,12 @@ results_n_topics <- d_cast %>%
     control = my_control,
     
     # number of CPU cores to use
-    mc.cores = 2L
+    mc.cores = 4L
   
   )
 ```
 
-```{r LDA n topics plot}
+```{r LDA n topics plot, eval = F}
 FindTopicsNumber_plot(results_n_topics[c(1, 3 : 5)])
 # we do not include Griffiths2004 because it produces NaN for some reason.
 ```
@@ -380,7 +381,7 @@ FindTopicsNumber_plot(results_n_topics[c(1, 3 : 5)])
 ### Fitting the topic model
 To visualize the results more easily, we fit a model with `25` topics. For illustrative purposes, we also fit a model with `5` topics which we label by hand.
 
-```{r fitting LDA 25, cache = TRUE}
+```{r fitting LDA 25, cache = TRUE, eval = F}
 #
 # 25 topics (ideal number of topics)
 LDA_25  <- LDA(
@@ -470,8 +471,8 @@ LDA_5 = list(
 
 
 LDA_25 = list(
-  beta  = tidy(LDA_25, matrix = "beta"),
-  gamma = tidy(LDA_25, matrix = "gamma")
+ # beta  = tidy(LDA_25, matrix = "beta"),
+  #gamma = tidy(LDA_25, matrix = "gamma")
   )
 
 save(
@@ -483,7 +484,7 @@ save(
   d_description,
   
   # Topic modeling
-  d_course, LDA_5,  LDA_25,
+  d_course, LDA_5,  #LDA_25,
   
   # File name
   file = "Shiny App/results_data.RDATA"

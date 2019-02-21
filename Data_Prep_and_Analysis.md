@@ -1,7 +1,7 @@
 Topic Modeling of Course Content
 ================
 Raphaël Morsomme
-2019-02-15
+2019-02-21
 
 -   [Introduction](#introduction)
 -   [Data preparation](#data-preparation)
@@ -25,6 +25,10 @@ Raphaël Morsomme
         -   [Topic labeling](#topic-labeling)
         -   [Results](#results-2)
 -   [Conclusion](#conclusion)
+
+``` r
+knitr::opts_chunk$set(cache.path = "Cache/")
+```
 
 ``` r
 library(tidyverse)
@@ -62,14 +66,14 @@ We import two datasets: `corpus`, a corpus containing the five most recent cours
 
 ``` r
 corpus <- Corpus(
-  x             = DirSource("Catalogues"),
+  x             = DirSource("Input Data/Catalogues"),
   readerControl = list(reader = readPDF(control = list(text = "-layout")))
   )
 ```
 
 ``` r
 d_course <- read_csv(
-  file     = "Course.csv",
+  file     = "Input Data/Course.csv",
   col_type = cols()
   )
 
@@ -220,14 +224,7 @@ d_description <- d_description %>%
     # remove own stop words
     !word %in% c(
       "student", 
-      "study",
-      "eleum",
-      "portal",
-      "maastricht",
-      "lecture",
-      "cuss",
-      "tutorial",
-      "topic"
+      "study"
       )
     
     )
@@ -240,7 +237,7 @@ rm(my_stemming_f, my_dictionary)
 print(d_description) # See humanities (original) - humanity (stem)
 ```
 
-    ## # A tibble: 164,081 x 4
+    ## # A tibble: 167,961 x 4
     ##    Code    `Calendar Year` word_original word       
     ##    <chr>   <chr>           <chr>         <chr>      
     ##  1 COR1002 2014-2015       cor1002       cor1002    
@@ -253,7 +250,7 @@ print(d_description) # See humanities (original) - humanity (stem)
     ##  8 COR1002 2014-2015       faculty       faculty    
     ##  9 COR1002 2014-2015       humanities    humanity   
     ## 10 COR1002 2014-2015       sciences      science    
-    ## # ... with 164,071 more rows
+    ## # ... with 167,951 more rows
 
 Analysis
 ========
@@ -299,20 +296,20 @@ tf_idf <- d_description %>%
 print(tf_idf)
 ```
 
-    ## # A tibble: 23,238 x 9
+    ## # A tibble: 23,790 x 9
     ##    Code  word      n     tf   idf tf_idf `Course Title` Cluster Title_short
     ##    <chr> <chr> <int>  <dbl> <dbl>  <dbl> <chr>          <chr>   <chr>      
-    ##  1 SSC3~ poli~    34 0.0798  1.82  0.145 Public Policy~ Govern~ Public Pol~
-    ##  2 UGR3~ sear~    30 0.108   1.02  0.111 Undergraduate~ Methods Undergradu~
-    ##  3 PRO1~ sear~    27 0.118   1.02  0.121 Research Proj~ Methods Research P~
-    ##  4 SKI3~ conf~    26 0.0778  4.05  0.315 Preparing Con~ Skills  Preparing ~
-    ##  5 SSC2~ law      26 0.128   2.10  0.269 Law and Socie~ Sociol~ Law and So~
-    ##  6 SSC2~ conf~    26 0.105   2.26  0.238 Conflict Reso~ Int. R~ Conflict R~
-    ##  7 SSC3~ trade    26 0.0550  3.54  0.194 International~ Intern~ Internatio~
-    ##  8 HUM2~ memo~    25 0.0622  3.36  0.209 Cultural Reme~ Cultur~ Cult. Reme~
-    ##  9 SKI2~ argu~    25 0.104   2.51  0.260 Argumentation~ Skills  Arg. I     
-    ## 10 SSC2~ publ~    25 0.117   1.97  0.230 Public Health~ Govern~ Public Hea~
-    ## # ... with 23,228 more rows
+    ##  1 SSC3~ poli~    34 0.0783  1.82  0.142 Public Policy~ Govern~ Public Pol~
+    ##  2 UGR3~ sear~    30 0.106   1.02  0.108 Undergraduate~ Methods Undergradu~
+    ##  3 PRO1~ sear~    27 0.117   1.02  0.119 Research Proj~ Methods Research P~
+    ##  4 SKI3~ conf~    26 0.0762  4.05  0.309 Preparing Con~ Skills  Preparing ~
+    ##  5 SSC2~ law      26 0.124   2.10  0.262 Law and Socie~ Sociol~ Law and So~
+    ##  6 SSC2~ conf~    26 0.102   2.26  0.230 Conflict Reso~ Int. R~ Conflict R~
+    ##  7 SSC3~ trade    26 0.0539  3.54  0.191 International~ Intern~ Internatio~
+    ##  8 HUM2~ memo~    25 0.0617  3.36  0.207 Cultural Reme~ Cultur~ Cult. Reme~
+    ##  9 SKI2~ argu~    25 0.102   2.51  0.255 Argumentation~ Skills  Arg. I     
+    ## 10 SSC2~ publ~    25 0.115   1.97  0.226 Public Health~ Govern~ Public Hea~
+    ## # ... with 23,780 more rows
 
 ``` r
 #
@@ -386,12 +383,13 @@ my_control <- list(
   best    = TRUE,
   
   burnin  = 500,
-  iter    = 2000,
+  iter    = 5000,
   thin    = 100
   
   )
+```
 
-
+``` r
 #
 # Simulations
 results_n_topics <- d_cast %>%
@@ -399,7 +397,7 @@ results_n_topics <- d_cast %>%
   FindTopicsNumber(
     
     # Number of topics tried
-    topics = seq(5, 95, by = 5),
+    topics = seq(5, 75, by = 5),
   
     # metrics considered
     metrics = c(
@@ -416,18 +414,13 @@ results_n_topics <- d_cast %>%
     control = my_control,
     
     # number of CPU cores to use
-    mc.cores = 2L
+    mc.cores = 4L
   
   )
 ```
 
 ``` r
 FindTopicsNumber_plot(results_n_topics[c(1, 3 : 5)])
-```
-
-![](Data_Prep_and_Analysis_files/figure-markdown_github/LDA%20n%20topics%20plot-1.png)
-
-``` r
 # we do not include Griffiths2004 because it produces NaN for some reason.
 ```
 
